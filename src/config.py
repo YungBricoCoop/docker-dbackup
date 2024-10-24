@@ -24,11 +24,11 @@ class Backup(BaseModel):
     path: str  # path to the backup directory (remote or local)
     port: Optional[int] = None
     db_connection: str
-    encryption_enabled: Optional[bool] = Field(default=False)
-    encryption_password: Optional[str] = Field(default="")
-    compression_enabled: Optional[bool] = Field(default=True)
-    skip_tables: Optional[str] = Field(default="")
-    schedule: Optional[str] = Field(default="0 0 * * *")
+    encryption_enabled: Optional[bool] = None
+    encryption_password: Optional[str] = None
+    compression_enabled: Optional[bool] = None
+    skip_tables: Optional[str] = None
+    schedule: Optional[str] = None
 
     @field_validator('host')
     def validate_host(cls, value, info):
@@ -103,6 +103,11 @@ class Config(BaseModel):
                     raise ValueError(
                         f"Backup '{backup.name}': host '{backup.host}' is not defined in hosts"
                     )
+            
+            # set defaults from global_config if not set in backup
+            for field in ['encryption_enabled', 'encryption_password', 'compression_enabled', 'skip_tables', 'schedule']:
+                if getattr(backup, field) is None:
+                    setattr(backup, field, getattr(model.global_config, field))
         return model
 
 

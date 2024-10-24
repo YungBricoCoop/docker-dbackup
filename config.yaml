@@ -65,13 +65,13 @@ backup:
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
     db_connection: "production_db"
-    schedule: "0 * * * *" # Run every hour
+    schedule: "*/1 * * * *" # Run every minute
 
   - name: "docker_volume_backup"
     path: "/backup_volume"
     protocol: "local"
     db_connection: "production_db"
-    schedule: "0 * * * *" # Run every hour
+    schedule: "*/1 * * * *" # Run every minute
 
 notifications:
   - method: "email" # none, email
