@@ -6,7 +6,7 @@ global_config:
 
   skip_tables: "logs, cache"
 
-  schedule: "0 0 * * *"
+  schedule: "0 0 * * *" # Run every day at midnight
 
 db_connections:
   - name: "staging_db"

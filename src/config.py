@@ -1,6 +1,7 @@
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional
+from croniter import croniter
 
 class DBConnection(BaseModel):
     name: str
@@ -45,6 +46,12 @@ class Backup(BaseModel):
             )
         return value
 
+    @field_validator('schedule')
+    def validate_schedule(cls, value):
+        if value and not croniter.is_valid(value):
+            raise ValueError(f"Invalid cron syntax: '{value}'")
+        return value
+
 class Notification(BaseModel):
     method: str = Field(default="email", pattern="email|discord")
     notify_on_fail: bool = Field(default=True)
@@ -62,6 +69,12 @@ class GlobalConfig(BaseModel):
     skip_tables: Optional[str] = Field(default="")
     max_backup_files: int = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
+
+    @field_validator('schedule')
+    def validate_schedule(cls, value):
+        if value and not croniter.is_valid(value):
+            raise ValueError(f"Invalid cron syntax: '{value}'")
+        return value
 
 class Config(BaseModel):
     global_config: GlobalConfig 
