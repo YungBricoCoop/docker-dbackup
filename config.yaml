@@ -1,0 +1,84 @@
+global_config:
+  # all global configs can be overridden inside each backup config
+  encryption_enabled: false
+  encryption_password: ""
+  compression_enabled: true
+
+  skip_tables: "logs, cache"
+
+  schedule: "0 0 * * *"
+
+db_connections:
+  - name: "staging_db"
+    host: "staging-db.example.com"
+    port: 3306
+    username: "staging_user"
+    password: "stagingpassword"
+    database: "staging_db"
+  - name: "production_db"
+    host: "production-db.example.com"
+    port: 3306
+    username: "prod_user"
+    password: "prodpassword"
+    database: "production_db"
+
+hosts:
+  - name: "primary_ssh"
+    host: "backup-ssh-server1.example.com"
+    username: "ssh_user1"
+    password: "sshpassword1"
+  - name: "backup_ftp"
+    host: "ftp-backup.example.com"
+    username: "ftp_user"
+    password: "ftppassword"
+  - name: "secondary_ssh"
+    host: "backup-ssh-server2.example.com"
+    username: "ssh_user2"
+    password: "sshpassword2"
+
+backup:
+  - name: "staging_ssh_backup"
+    host: "primary_ssh"
+    path: "/data/staging_backups"
+    db_connection: "staging_db"
+    protocol: "sftp"
+    port: 22
+    encryption_enabled: true
+    encryption_password: "strongencryptionkey"
+    skip_tables: "logs, cache"
+
+  - name: "prod_ftp_backup"
+    host: "backup_ftp"
+    path: "/ftp_backups/production"
+    protocol: "ftp"
+    port: 21
+    encryption_enabled: true
+    encryption_password: "strongencryptionkey"
+    db_connection: "production_db"
+    schedule: "0 * * * *" # Run every hour
+
+  - name: "prod_ssh_backup"
+    host: "secondary_ssh"
+    path: "/backups/production"
+    protocol: "sftp"
+    port: 22
+    encryption_enabled: true
+    encryption_password: "strongencryptionkey"
+    db_connection: "production_db"
+    schedule: "0 * * * *" # Run every hour
+
+  - name: "docker_volume_backup"
+    path: "/backup_volume"
+    protocol: "local"
+    db_connection: "production_db"
+    schedule: "0 * * * *" # Run every hour
+
+notifications:
+  - method: "email" # none, email
+    notify_on_fail: true
+    notify_on_success: false
+    smtp_server: "smtp.example.com"
+    smtp_port: 587
+    smtp_user: "notification@example.com"
+    smtp_password: "securepassword123"
+    smtp_recipient: "admin@example.com"
