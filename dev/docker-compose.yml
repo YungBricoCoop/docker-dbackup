@@ -1,0 +1,22 @@
+name: "dbackup-dev"
+services:
+  dbackup:
+    container_name: dbackup
+    build: ../.
+    volumes:
+      - ../src/.:/app/
+      - ../config.yaml:/app/config.yaml
+    environment:
+      TZ: Europe/Zurich
+    entrypoint: ["sh", "-c", "while :; do sleep 2073600; done"]
+  mysql:
+    image: mysql:8.0
+    container_name: db
+    volumes:
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    environment:
+      TZ: Europe/Zurich
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: staging_db
+      MYSQL_USER: staging_user
+      MYSQL_PASSWORD: stagingpassword

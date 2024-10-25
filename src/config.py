@@ -24,6 +24,7 @@ class Backup(BaseModel):
     path: str  # path to the backup directory (remote or local)
     port: Optional[int] = None
     db_connection: str
+    filename: str = None
     encryption_enabled: Optional[bool] = None
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None

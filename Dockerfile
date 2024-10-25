@@ -2,6 +2,7 @@ FROM python:3.10-alpine
 
 RUN apk update && apk add --no-cache \
   mysql-client \
+  mariadb-connector-c \
   bash \
   xz \
   openssl
@@ -9,7 +10,7 @@ RUN apk update && apk add --no-cache \
 
 WORKDIR /app
 
-COPY src/ ./
+COPY src/. ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ENV vars

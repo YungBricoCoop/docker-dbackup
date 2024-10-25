@@ -10,7 +10,7 @@ global_config:
 
 db_connections:
   - name: "staging_db"
-    host: "staging-db.example.com"
+    host: "db"
     port: 3306
     username: "staging_user"
     password: "stagingpassword"
