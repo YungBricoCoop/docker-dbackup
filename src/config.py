@@ -28,6 +28,7 @@ class Backup(BaseModel):
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None
     skip_tables: Optional[str] = None
+    retention_period: Optional[str] = None
     schedule: Optional[str] = None
 
     @field_validator('host')
@@ -67,7 +68,7 @@ class GlobalConfig(BaseModel):
     encryption_password: Optional[str] = Field(default="")
     compression_enabled: Optional[bool] = Field(default=True)
     skip_tables: Optional[str] = Field(default="")
-    max_backup_files: int = Field(default=100)
+    retention_period: Optional[str] = Field(default="7 days")
     schedule: Optional[str] = Field(default="0 0 * * *")
 
     @field_validator('schedule')
@@ -113,7 +114,7 @@ class Config(BaseModel):
                     )
             
             # set defaults from global_config if not set in backup
-            for field in ['encryption_enabled', 'encryption_password', 'compression_enabled', 'skip_tables', 'schedule']:
+            for field in ['encryption_enabled', 'encryption_password', 'compression_enabled', 'skip_tables', 'retention_period', 'schedule']:
                 if getattr(backup, field) is None:
                     setattr(backup, field, getattr(model.global_config, field))
         return model
