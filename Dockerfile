@@ -5,7 +5,8 @@ RUN apk update && apk add --no-cache \
   mariadb-connector-c \
   bash \
   xz \
-  openssl
+  openssl \
+  openssh-client
 
 
 WORKDIR /app

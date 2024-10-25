@@ -2,12 +2,25 @@ import os
 from loguru import logger
 
 
+def file_exists(filepath):
+    """
+    Checks if a file exists.
+
+    :param filepath: The path to the file to check.
+    :return: True if the file exists, False otherwise.
+    """
+    return os.path.exists(filepath)
+
+
 def delete_file(filepath):
     """
     Deletes a file from the filesystem.
 
     :param filepath: The path to the file to delete.
     """
+    if not file_exists(filepath):
+        logger.warning(f"File does not exist: {filepath}")
+        return
     try:
         os.remove(filepath)
         logger.info(f"File deleted: {filepath}")

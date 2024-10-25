@@ -1,28 +1,28 @@
-import os
 import paramiko
+from scp import SCPClient
 from loguru import logger
 from config import Host
 
 
 def send_file_over_ssh(local_filepath, remote_filepath, host: Host):
     """
-    Sends a file over SSH to a remote host using SFTP.
+    Sends a file over SSH to a remote host using SCP.
 
     :param local_filepath: Path to the local file to send.
     :param remote_filepath: Destination path on the remote host.
-    :param host: Hostname or IP address of the remote host.
-    :param port: SSH port number (default is 22).
-    :param username: SSH username.
-    :param password: SSH password.
+    :param host: Host configuration including hostname, port, username, and password.
     """
 
-    remote_dest = f"{host.username}@{host.host}:{remote_filepath}"
-    logger.info(f"Sending file over SSH: {local_filepath} -> {remote_dest}")
+    logger.info(
+        f"Sending file over SSH using SCP: {local_filepath} -> {host.username}@{host.host}:{remote_filepath}"
+    )
 
     try:
+        # Initialize SSH client
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        # Connect to the host
         ssh.connect(
             hostname=host.host,
             port=host.port,
@@ -30,21 +30,14 @@ def send_file_over_ssh(local_filepath, remote_filepath, host: Host):
             password=host.password,
         )
 
-        sftp = ssh.open_sftp()
+        with SCPClient(ssh.get_transport()) as scp:
+            scp.put(local_filepath, remote_filepath)
 
-        remote_dir = os.path.dirname(remote_filepath)
-        try:
-            sftp.chdir(remote_dir)
-        except IOError:
-            sftp.makedirs(remote_dir)
-            sftp.chdir(remote_dir)
-
-        sftp.put(local_filepath, remote_filepath)
-
-        sftp.close()
-        ssh.close()
-
-        logger.info(f"File sent successfully over SSH to {remote_dest}")
+        logger.info(
+            f"File sent successfully over SSH to {host.username}@{host.host}:{remote_filepath}"
+        )
     except Exception as e:
-        logger.error(f"Failed to send file over SSH: {e}, {remote_dest}")
+        logger.error(f"Failed to send file over SSH using SCP: {e}")
         raise
+    finally:
+        ssh.close()

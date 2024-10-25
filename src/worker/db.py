@@ -5,11 +5,15 @@ from datetime import datetime
 from loguru import logger
 from config import DBConnection
 
-def get_backup_file_path(db_connection: DBConnection, filename: str = None):
+
+def get_backup_file_path(
+    db_connection: DBConnection, backup_name: str, filename: str = None
+):
     tmp_dir = tempfile.gettempdir()
     prefix = filename if filename else f"{db_connection.name}_{db_connection.database}"
-    filename = f"{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}.sql"
+    filename = f"{backup_name}_{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}.sql"
     return os.path.join(tmp_dir, filename)
+
 
 def dump_db(db_connection: DBConnection, filename: str = None, skip_tables: str = None):
     logger.info(f"Dumping database: {db_connection.name} ({db_connection.database})")
@@ -17,33 +21,38 @@ def dump_db(db_connection: DBConnection, filename: str = None, skip_tables: str 
     backup_file_path = get_backup_file_path(db_connection, filename)
 
     try:
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as cnf_file:
-            cnf_file.write(f"""[client]
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as cnf_file:
+            cnf_file.write(
+                f"""[client]
 host={db_connection.host}
 user={db_connection.username}
 password={db_connection.password}
 port={db_connection.port}
-""")
+"""
+            )
             cnf_file_path = cnf_file.name
 
         command = [
             "mysqldump",
             f"--defaults-extra-file={cnf_file_path}",
             "--no-tablespaces",
-            db_connection.database
+            db_connection.database,
         ]
 
         if skip_tables:
-            skip_tables_list = skip_tables.split(',')
-            command.extend(f"--ignore-table={db_connection.database}.{table}" for table in skip_tables_list)
+            skip_tables_list = skip_tables.split(",")
+            command.extend(
+                f"--ignore-table={db_connection.database}.{table}"
+                for table in skip_tables_list
+            )
 
-        with open(backup_file_path, 'w') as backup_file:
+        with open(backup_file_path, "w") as backup_file:
             result = subprocess.run(
                 command,
                 stdout=backup_file,
                 stderr=subprocess.PIPE,
                 text=True,
-                check=True
+                check=True,
             )
 
             if result.stderr:

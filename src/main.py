@@ -16,7 +16,7 @@ def backup_task(backup: Backup):
     compressed_dump_file = None
     encrypted_dump_file = None
     try:
-        dump_file = dump_db(backup.db_connection_obj)
+        dump_file = dump_db(backup.db_connection_obj, backup.name)
 
         if backup.compression_enabled:
             compressed_dump_file = compress_file(dump_file)

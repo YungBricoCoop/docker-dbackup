@@ -15,6 +15,7 @@ db_connections:
     username: "staging_user"
     password: "stagingpassword"
     database: "staging_db"
+
   - name: "production_db"
     host: "production-db.example.com"
     port: 3306
@@ -24,53 +25,33 @@ db_connections:
 
 hosts:
   - name: "primary_ssh"
-    host: "backup-ssh-server1.example.com"
-    username: "ssh_user1"
-    password: "sshpassword1"
+    host: "ssh-sftp-ftp-server"
+    username: "wise-fox"
+    password: "9Jp*2Lv@4zQ"
     protocol: "ssh"
     port: 22
-  - name: "backup_ftp"
-    host: "ftp-backup.example.com"
-    username: "ftp_user"
-    password: "ftppassword"
+  - name: "primary_ftp"
+    host: "ssh-sftp-ftp-server"
+    username: "agile-badger"
+    password: "6Hv9]3kJt!^"
     protocol: "ftp"
     port: 21
-  - name: "secondary_ssh"
-    host: "backup-ssh-server2.example.com"
-    username: "ssh_user2"
-    password: "sshpassword2"
-    protocol: "ssh"
-    port: 22
 
 backup:
   - name: "staging_ssh_backup"
     host: "primary_ssh"
-    path: "/data/staging_backups"
+    path: "/home/wise-fox/files"
+    db_connection: "staging_db"
+    skip_tables: "logs, cache"
+    schedule: "*/1 * * * *" # Run every minute
+
+  - name: "staging_ftp_backup"
+    host: "primary_ftp"
+    path: "/home/agile-badger/files"
     db_connection: "staging_db"
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
     skip_tables: "logs, cache"
-
-  - name: "prod_ftp_backup"
-    host: "backup_ftp"
-    path: "/ftp_backups/production"
-    encryption_enabled: true
-    encryption_password: "strongencryptionkey"
-    db_connection: "production_db"
-    schedule: "0 * * * *" # Run every hour
-
-  - name: "prod_ssh_backup"
-    host: "secondary_ssh"
-    path: "/backups/production"
-    encryption_enabled: true
-    encryption_password: "strongencryptionkey"
-    db_connection: "production_db"
-    schedule: "*/1 * * * *" # Run every minute
-
-  - name: "docker_volume_backup"
-    path: "/backup_volume"
-    local: "true"
-    db_connection: "production_db"
     schedule: "*/1 * * * *" # Run every minute
 
 notifications:

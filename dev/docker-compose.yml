@@ -20,3 +20,11 @@ services:
       MYSQL_DATABASE: staging_db
       MYSQL_USER: staging_user
       MYSQL_PASSWORD: stagingpassword
+  server:
+    container_name: ssh-sftp-ftp-server
+    build: .
+    ports:
+      - "22:22"
+      - "21:21"
+    environment:
+      TZ: Europe/Zurich
