@@ -27,22 +27,26 @@ hosts:
     host: "backup-ssh-server1.example.com"
     username: "ssh_user1"
     password: "sshpassword1"
+    protocol: "ssh"
+    port: 22
   - name: "backup_ftp"
     host: "ftp-backup.example.com"
     username: "ftp_user"
     password: "ftppassword"
+    protocol: "ftp"
+    port: 21
   - name: "secondary_ssh"
     host: "backup-ssh-server2.example.com"
     username: "ssh_user2"
     password: "sshpassword2"
+    protocol: "ssh"
+    port: 22
 
 backup:
   - name: "staging_ssh_backup"
     host: "primary_ssh"
     path: "/data/staging_backups"
     db_connection: "staging_db"
-    protocol: "sftp"
-    port: 22
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
     skip_tables: "logs, cache"
@@ -50,8 +54,6 @@ backup:
   - name: "prod_ftp_backup"
     host: "backup_ftp"
     path: "/ftp_backups/production"
-    protocol: "ftp"
-    port: 21
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
     db_connection: "production_db"
@@ -60,8 +62,6 @@ backup:
   - name: "prod_ssh_backup"
     host: "secondary_ssh"
     path: "/backups/production"
-    protocol: "sftp"
-    port: 22
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
     db_connection: "production_db"
@@ -69,7 +69,7 @@ backup:
 
   - name: "docker_volume_backup"
     path: "/backup_volume"
-    protocol: "local"
+    local: "true"
     db_connection: "production_db"
     schedule: "*/1 * * * *" # Run every minute
 

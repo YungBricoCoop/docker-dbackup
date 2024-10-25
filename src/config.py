@@ -18,14 +18,15 @@ class Host(BaseModel):
     host: str
     username: str
     password: str
+    port: int
+    protocol: str = Field(pattern="ssh|sftp|ftp")
 
 
 class Backup(BaseModel):
     name: str
-    protocol: str = Field(pattern="ssh|sftp|ftp|local")
     host: Optional[str] = None
+    local: bool = Field(default=False)
     path: str  # path to the backup directory (remote or local)
-    port: Optional[int] = None
     db_connection: str
     filename: str = None
     encryption_enabled: Optional[bool] = None
@@ -39,17 +40,14 @@ class Backup(BaseModel):
 
     @field_validator("host")
     def validate_host(cls, value, info):
-        if info.data.get("protocol") != "local" and not value:
+        local = info.data.get("local")
+        if not local and not value:
             raise ValueError(
-                f"Host must be specified for protocol '{info.data['protocol']}'"
+                f"Either 'host' or 'local' must be specified for backup '{info.data.get('name')}'"
             )
-        return value
-
-    @field_validator("port")
-    def validate_port(cls, value, info):
-        if info.data.get("protocol") != "local" and not value:
+        if local and value:
             raise ValueError(
-                f"Port must be specified for protocol '{info.data['protocol']}'"
+                f"Only one of 'host' or 'local' can be specified for backup '{info.data.get('name')}'"
             )
         return value
 
@@ -107,20 +105,15 @@ class Config(BaseModel):
         host_names = {host.name for host in model.hosts}
 
         for backup in model.backup:
+            if not backup.local and backup.host not in host_names:
+                raise ValueError(
+                    f"Backup '{backup.name}': host '{backup.host}' is not defined in hosts, if you want to use a local backup, set 'local: true'"
+                )
+
             if backup.db_connection not in db_connection_names:
                 raise ValueError(
                     f"Backup '{backup.name}': db_connection '{backup.db_connection}' is not defined in db_connections"
                 )
-
-            if backup.protocol != "local":
-                if not backup.host:
-                    raise ValueError(
-                        f"Backup '{backup.name}': host must be specified for protocol '{backup.protocol}'"
-                    )
-                if backup.host not in host_names:
-                    raise ValueError(
-                        f"Backup '{backup.name}': host '{backup.host}' is not defined in hosts"
-                    )
 
             # set host_obj and db_connection_obj
             backup.host_obj = next(

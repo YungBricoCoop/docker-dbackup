@@ -4,7 +4,10 @@ from scheduler import start_scheduler
 from worker.db import dump_db
 from worker.compression import compress_file
 from worker.security import encrypt_file
-from worker.file import delete_file
+from worker.file import delete_file, move_file_to_folder
+from remote.ftp_transfer import send_file_over_ftp
+from remote.sftp_transfer import send_file_over_sftp
+from remote.ssh_transfer import send_file_over_ssh
 
 
 def backup_task(backup: Backup):
@@ -19,12 +22,39 @@ def backup_task(backup: Backup):
             compressed_dump_file = compress_file(dump_file)
 
         if backup.encryption_enabled:
-            file_to_encrypt = (
-                compressed_dump_file if compressed_dump_file else dump_file
-            )
+            file_to_encrypt = compressed_dump_file or dump_file
             encrypted_dump_file = encrypt_file(
                 file_to_encrypt, backup.encryption_password
             )
+
+        file_to_send = encrypted_dump_file or compressed_dump_file or dump_file
+        if backup.local:
+            move_file_to_folder(
+                file_to_send,
+                backup.path,
+            )
+
+        elif backup.host_obj.protocol == "ssh":
+            send_file_over_ssh(
+                file_to_send,
+                backup.path,
+                backup.host_obj,
+            )
+
+        elif backup.host_obj.protocol == "sftp":
+            send_file_over_sftp(
+                file_to_send,
+                backup.path,
+                backup.host_obj,
+            )
+
+        elif backup.host_obj.protocol == "ftp":
+            send_file_over_ftp(
+                file_to_send,
+                backup.path,
+                backup.host_obj,
+            )
+
     except Exception as e:
         logger.error(f"Backup failed: {e}")
     finally:
