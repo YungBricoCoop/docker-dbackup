@@ -48,7 +48,7 @@ def send_file_over_ftp(local_filepath, remote_filepath, host: Host):
             except error_perm:
                 create_ftp_directory_tree(ftp, remote_dir)
                 ftp.cwd(remote_dir)
-
+        # FIXME: The file get's written as the folder name
         with open(local_filepath, "rb") as file:
             ftp.storbinary(f"STOR {os.path.basename(remote_filepath)}", file)
 
