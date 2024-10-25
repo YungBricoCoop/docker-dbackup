@@ -2,9 +2,10 @@ import time
 from config import Config
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from loguru import logger
 
 def start_scheduler(backup_task, config : Config):
-    print("Starting scheduler...")
+    logger.info("Starting scheduler...")
     scheduler = BackgroundScheduler()
     for backup in config.backup:
         trigger = CronTrigger.from_crontab(backup.schedule)

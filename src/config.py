@@ -75,6 +75,13 @@ class GlobalConfig(BaseModel):
         if value and not croniter.is_valid(value):
             raise ValueError(f"Invalid cron syntax: '{value}'")
         return value
+    
+class Log(BaseModel):
+    level: str = Field(default="INFO", pattern="DEBUG|INFO|WARNING|ERROR|CRITICAL")
+    file: Optional[str] = Field(default="/var/log/backup.log")
+    rotation_interval: Optional[str] = Field(default="1 day")
+    retention_period: Optional[str] = Field(default="7 days")
+
 
 class Config(BaseModel):
     global_config: GlobalConfig 
@@ -82,6 +89,7 @@ class Config(BaseModel):
     hosts: List[Host]
     backup: List[Backup]
     notifications: Optional[List[Notification]] = Field(default=[])
+    log: Optional[Log] = Field(default=Log())
 
     @model_validator(mode='after')
     def validate_backups(cls, model):
