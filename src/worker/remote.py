@@ -8,6 +8,8 @@ from scp import SCPClient
 from config import Host
 from worker.file import get_filename_from_path
 
+DEFAULT_TIMEOUT_IN_SECONDS = 10
+
 
 def remote_transfer(
     type: str,
@@ -35,7 +37,7 @@ def send_file_over_ssh_with_scp(
     :param local_filepath: Path to the local file to send.
     :param remote_dir_path: Destination directory path on the remote host.
     :param remote_filename: Name of the file on the remote host.
-    :param host: Host configuration including hostname, port, username, and password.
+    :param host: Host configuration including hostname, port, username, password, or private SSH key.
     """
 
     remote_filepath = os.path.join(remote_dir_path, remote_filename)
@@ -46,12 +48,22 @@ def send_file_over_ssh_with_scp(
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        ssh.connect(
-            hostname=host.host,
-            port=host.port,
-            username=host.username,
-            password=host.password,
-        )
+        if host.password:
+            ssh.connect(
+                hostname=host.host,
+                port=host.port,
+                username=host.username,
+                password=host.password,
+                timeout=DEFAULT_TIMEOUT_IN_SECONDS,
+            )
+        elif host.private_ssh_key:
+            ssh.connect(
+                hostname=host.host,
+                port=host.port,
+                username=host.username,
+                key_filename=host.private_ssh_key,
+                timeout=DEFAULT_TIMEOUT_IN_SECONDS,
+            )
 
         stdin, stdout, stderr = ssh.exec_command(f"mkdir -p '{remote_dir_path}'")
         stdout.channel.recv_exit_status()
@@ -76,7 +88,7 @@ def send_file_over_sftp(
     :param local_filepath: Path to the local file to send.
     :param remote_dir_path: Destination directory path on the remote host.
     :param remote_filename: Name of the file on the remote host.
-    :param host: Host configuration including hostname, port, username, and password.
+    :param host: Host configuration including hostname, port, username, password, or private SSH key.
     """
 
     remote_filepath = os.path.join(remote_dir_path, remote_filename)
@@ -84,10 +96,27 @@ def send_file_over_sftp(
     logger.info(f"Sending file over SFTP: {local_filepath} -> {remote_dest}")
 
     try:
-        transport = paramiko.Transport((host.host, host.port))
-        transport.connect(username=host.username, password=host.password)
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        sftp = paramiko.SFTPClient.from_transport(transport)
+        if host.password:
+            ssh.connect(
+                hostname=host.host,
+                port=host.port,
+                username=host.username,
+                password=host.password,
+                timeout=DEFAULT_TIMEOUT_IN_SECONDS,
+            )
+        elif host.private_ssh_key:
+            ssh.connect(
+                hostname=host.host,
+                port=host.port,
+                username=host.username,
+                key_filename=host.private_ssh_key,
+                timeout=DEFAULT_TIMEOUT_IN_SECONDS,
+            )
+
+        sftp = ssh.open_sftp()
 
         try:
             sftp.chdir(remote_dir_path)
@@ -105,7 +134,7 @@ def send_file_over_sftp(
         sftp.put(local_filepath, remote_filepath)
 
         sftp.close()
-        transport.close()
+        ssh.close()
 
         logger.info(f"File sent successfully over SFTP to {remote_dest}")
     except Exception as e:
@@ -148,7 +177,7 @@ def send_file_over_ftp(
 
     try:
         ftp = FTP()
-        ftp.connect(host=host.host, port=host.port)
+        ftp.connect(host=host.host, port=host.port, timeout=DEFAULT_TIMEOUT_IN_SECONDS)
         ftp.login(user=host.username, passwd=host.password)
 
         if remote_dir_path:

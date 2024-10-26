@@ -18,9 +18,26 @@ class Host(BaseModel):
     name: str
     host: str
     username: str
-    password: str
+    password: Optional[str] = None
+    private_ssh_key: Optional[str] = None
     port: int
     protocol: str = Field(pattern="scp|sftp|ftp")
+
+    @model_validator(mode="after")
+    def validate_host(cls, model):
+        if model.protocol == "ftp" and not model.password:
+            raise ValueError(f"Password must be specified for FTP protocol.")
+
+        if model.protocol in ["scp", "sftp"]:
+            if not model.password and not model.private_ssh_key:
+                raise ValueError(
+                    "Either password or private SSH key must be specified for SCP/SFTP protocol."
+                )
+            if model.password and model.private_ssh_key:
+                raise ValueError(
+                    "Either password or private SSH key can be used for SCP/SFTP protocol."
+                )
+        return model
 
 
 class Backup(BaseModel):
