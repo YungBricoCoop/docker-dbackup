@@ -1,3 +1,4 @@
+import sys
 from loguru import logger
 from config import get_config, Backup, Log
 from scheduler import start_scheduler
@@ -5,11 +6,11 @@ from worker.db import dump_db
 from worker.compression import compress_file
 from worker.security import encrypt_file
 from worker.file import delete_file, move_file_to_folder
-from remote.remote_transfer import remote_transfer
+from worker.remote import remote_transfer
 
 
 def backup_task(backup: Backup):
-    logger.info(f"Starting backup task for {backup.name}")
+    logger.info(f"[{backup.name}] Starting backup task...")
     dump_file = None
     compressed_dump_file = None
     encrypted_dump_file = None
@@ -39,8 +40,9 @@ def backup_task(backup: Backup):
                 backup.host_obj,
             )
 
+        logger.success(f"[{backup.name}] Backup task completed successfully")
     except Exception as e:
-        logger.error(f"Backup failed: {e}")
+        logger.error(f"[{backup.name}] Backup task failed: {e}")
     finally:
         if dump_file:
             delete_file(dump_file)
@@ -51,15 +53,20 @@ def backup_task(backup: Backup):
 
 
 def setup_logger(config: Log):
+    logger.remove()
     logger.add(
         config.file,
         level=config.level,
         rotation=config.rotation_interval,
         retention=config.retention_period,
+        format=config.format,
     )
+    logger.add(sys.stdout, level=config.level, format=config.format, colorize=True)
 
 
 if __name__ == "__main__":
     config = get_config("config.yaml")
+    if not config:
+        sys.exit(1)
     setup_logger(config.log)
     start_scheduler(backup_task, config)

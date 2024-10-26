@@ -1,6 +1,7 @@
 import lzma
 from loguru import logger
 
+
 def compress_file(filepath):
     """
     Compresses a file using XZ compression.
@@ -8,14 +9,13 @@ def compress_file(filepath):
     :param filepath: The path to the file to compress.
     :return: The path to the compressed file.
     """
-    compressed_filepath = filepath + '.xz'
-    logger.info(f"Compressing file: {filepath} -> {compressed_filepath}")
+    compressed_filepath = filepath + ".xz"
 
     try:
-        with open(filepath, 'rb') as input_file:
-            with lzma.open(compressed_filepath, 'wb') as output_file:
+        with open(filepath, "rb") as input_file:
+            with lzma.open(compressed_filepath, "wb") as output_file:
                 output_file.write(input_file.read())
-        logger.info(f"File compressed successfully: {compressed_filepath}")
+        logger.debug(f"File compressed successfully: {compressed_filepath}")
         return compressed_filepath
     except Exception as e:
         logger.error(f"Compression failed: {e}")
@@ -33,8 +33,8 @@ def decompress_file(filepath):
     logger.info(f"Decompressing file: {filepath} -> {decompressed_filepath}")
 
     try:
-        with lzma.open(filepath, 'rb') as input_file:
-            with open(decompressed_filepath, 'wb') as output_file:
+        with lzma.open(filepath, "rb") as input_file:
+            with open(decompressed_filepath, "wb") as output_file:
                 output_file.write(input_file.read())
         logger.info(f"File decompressed successfully: {decompressed_filepath}")
         return decompressed_filepath

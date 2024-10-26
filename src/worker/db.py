@@ -9,7 +9,7 @@ from config import Backup
 def get_backup_file_path(backup_name: str, backup_filename: str = None):
     tmp_dir = tempfile.gettempdir()
     prefix = backup_filename if backup_filename else f"{backup_name}"
-    filename = f"{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}.sql"
+    filename = f"{prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.sql"  # TODO: Use datetime format from config
     return os.path.join(tmp_dir, filename)
 
 

@@ -23,7 +23,7 @@ def delete_file(filepath):
         return
     try:
         os.remove(filepath)
-        logger.info(f"File deleted: {filepath}")
+        logger.debug(f"File deleted: {filepath}")
     except Exception as e:
         logger.error(f"Failed to delete file: {e}")
         raise

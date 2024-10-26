@@ -1,7 +1,8 @@
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 from typing import List, Optional
 from croniter import croniter
+from loguru import logger
 
 
 class DBConnection(BaseModel):
@@ -89,6 +90,9 @@ class Log(BaseModel):
     file: Optional[str] = Field(default="/var/log/backup.log")
     rotation_interval: Optional[str] = Field(default="1 day")
     retention_period: Optional[str] = Field(default="7 days")
+    format: Optional[str] = Field(
+        default="<green>{time:DD.MM.YYYY HH:mm:ss.SSS}</green> | <level>{level}</level> | <level>{message}</level>"
+    )
 
 
 class Config(BaseModel):
@@ -101,11 +105,27 @@ class Config(BaseModel):
 
     @model_validator(mode="after")
     def validate_backups(cls, model):
-        db_connection_names = {db.name for db in model.db_connections}
-        host_names = {host.name for host in model.hosts}
+        # check for unique names in db_connections
+        db_names = [db.name for db in model.db_connections]
+        if len(db_names) != len(set(db_names)):
+            raise ValueError("Duplicate names found in 'db_connections'")
+
+        # check for unique names in hosts
+        host_names = [host.name for host in model.hosts]
+        if len(host_names) != len(set(host_names)):
+            raise ValueError("Duplicate names found in 'hosts'")
+
+        # check for unique names in backup
+        backup_names = [backup.name for backup in model.backup]
+        if len(backup_names) != len(set(backup_names)):
+            raise ValueError("Duplicate names found in 'backup'")
+
+        # check db_connection and host references in backup
+        db_connection_names = set(db_names)
+        host_name_set = set(host_names)
 
         for backup in model.backup:
-            if not backup.local and backup.host not in host_names:
+            if not backup.local and backup.host not in host_name_set:
                 raise ValueError(
                     f"Backup '{backup.name}': host '{backup.host}' is not defined in hosts, if you want to use a local backup, set 'local: true'"
                 )
@@ -139,8 +159,13 @@ class Config(BaseModel):
 
 
 def get_config(config_file) -> Config:
-    with open(config_file, "r") as file:
-        config_data = yaml.safe_load(file)
-
-    config = Config(**config_data)
+    config = None
+    try:
+        with open(config_file, "r") as file:
+            config_data = yaml.safe_load(file)
+        config = Config(**config_data)
+    except FileNotFoundError as e:
+        logger.error(f"Config file not found: {e}")
+    except ValidationError as e:
+        logger.error(f"Config validation failed: {e}")
     return config
