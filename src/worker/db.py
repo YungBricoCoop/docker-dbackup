@@ -6,10 +6,12 @@ from loguru import logger
 from config import Backup
 
 
-def get_backup_file_path(backup_name: str, backup_filename: str = None):
+def get_backup_file_path(
+    backup_name: str, backup_filename: str = None, date_format: str = None
+):
     tmp_dir = tempfile.gettempdir()
     prefix = backup_filename if backup_filename else f"{backup_name}"
-    filename = f"{prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.sql"  # TODO: Use datetime format from config
+    filename = f"{prefix}_{datetime.now().strftime(date_format)}.sql"
     return os.path.join(tmp_dir, filename)
 
 
@@ -19,7 +21,9 @@ def dump_db(
     db_connection = backup.db_connection_obj
     logger.info(f"Dumping database: {db_connection.name} ({db_connection.database})")
     cnf_file_path = None
-    backup_file_path = get_backup_file_path(backup.name, backup.filename)
+    backup_file_path = get_backup_file_path(
+        backup.name, backup.filename, backup.date_format
+    )
 
     try:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as cnf_file:

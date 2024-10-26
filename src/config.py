@@ -47,6 +47,7 @@ class Backup(BaseModel):
     path: str  # path to the backup directory (remote or local)
     db_connection: str
     filename: str = None
+    date_format: str = None
     encryption_enabled: Optional[bool] = None
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None
@@ -88,6 +89,7 @@ class Notification(BaseModel):
 
 
 class GlobalConfig(BaseModel):
+    date_format: Optional[str] = Field(default="%Y-%m-%d_%H-%M-%S")
     encryption_enabled: Optional[bool] = Field(default=False)
     encryption_password: Optional[str] = Field(default="")
     compression_enabled: Optional[bool] = Field(default=True)
@@ -163,6 +165,7 @@ class Config(BaseModel):
 
             # set defaults from global_config if not set in backup
             for field in [
+                "date_format",
                 "encryption_enabled",
                 "encryption_password",
                 "compression_enabled",
