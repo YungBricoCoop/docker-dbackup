@@ -1,4 +1,4 @@
-from remote import ssh_transfer, sftp_transfer, ftp_transfer
+from remote import scp_transfer, sftp_transfer, ftp_transfer
 from config import Host
 from worker.file import get_filename_from_path
 
@@ -10,8 +10,8 @@ def remote_transfer(
     host: Host,
 ):
     remote_filename = get_filename_from_path(local_filepath)
-    if type == "ssh":
-        ssh_transfer.send_file_over_ssh(
+    if type == "scp":
+        scp_transfer.send_file_over_ssh_with_scp(
             local_filepath, remote_dir_path, remote_filename, host
         )
     elif type == "sftp":

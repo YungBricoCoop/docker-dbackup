@@ -24,11 +24,11 @@ db_connections:
     database: "production_db"
 
 hosts:
-  - name: "primary_ssh"
+  - name: "primary_scp"
     host: "ssh-sftp-ftp-server"
     username: "wise-fox"
     password: "9Jp*2Lv@4zQ"
-    protocol: "ssh"
+    protocol: "scp"
     port: 22
 
   - name: "primary_sftp"
@@ -46,8 +46,8 @@ hosts:
     port: 21
 
 backup:
-  - name: "staging_ssh_backup"
-    host: "primary_ssh"
+  - name: "staging_scp_backup"
+    host: "primary_scp"
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
     skip_tables: "logs, cache"

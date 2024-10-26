@@ -19,7 +19,7 @@ class Host(BaseModel):
     username: str
     password: str
     port: int
-    protocol: str = Field(pattern="ssh|sftp|ftp")
+    protocol: str = Field(pattern="scp|sftp|ftp")
 
 
 class Backup(BaseModel):

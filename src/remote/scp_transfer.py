@@ -5,7 +5,7 @@ from loguru import logger
 from config import Host
 
 
-def send_file_over_ssh(
+def send_file_over_ssh_with_scp(
     local_filepath: str, remote_dir_path: str, remote_filename: str, host: Host
 ):
     """
