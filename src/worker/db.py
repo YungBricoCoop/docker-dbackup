@@ -6,24 +6,13 @@ from loguru import logger
 from config import Backup
 
 
-def get_backup_file_path(
-    backup_name: str, backup_filename: str = None, date_format: str = None
-):
-    tmp_dir = tempfile.gettempdir()
-    prefix = backup_filename if backup_filename else f"{backup_name}"
-    filename = f"{prefix}_{datetime.now().strftime(date_format)}.sql"
-    return os.path.join(tmp_dir, filename)
-
-
 def dump_db(
     backup: Backup,
+    filepath: str = None,
 ):
     db_connection = backup.db_connection_obj
     logger.info(f"Dumping database: {db_connection.name} ({db_connection.database})")
     cnf_file_path = None
-    backup_file_path = get_backup_file_path(
-        backup.name, backup.filename, backup.date_format
-    )
 
     try:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as cnf_file:
@@ -51,7 +40,7 @@ port={db_connection.port}
                 for table in skip_tables_list
             )
 
-        with open(backup_file_path, "w") as backup_file:
+        with open(filepath, "w") as backup_file:
             result = subprocess.run(
                 command,
                 stdout=backup_file,
@@ -64,8 +53,8 @@ port={db_connection.port}
                 logger.error(f"mysqldump error: {result.stderr.strip()}")
                 raise Exception(f"mysqldump failed with error: {result.stderr.strip()}")
 
-            logger.info(f"Database dump saved to: {backup_file_path}")
-            return backup_file_path
+            logger.info(f"Database dump saved to: {filepath}")
+            return filepath
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Database dump failed: {e}")

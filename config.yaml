@@ -62,7 +62,7 @@ backup:
 
   - name: "staging_ftp_backup"
     host: "primary_ftp"
-    path: "/files/test"
+    path: "/files/ftp"
     db_connection: "staging_db"
     encryption_enabled: true
     encryption_password: "strongencryptionkey"

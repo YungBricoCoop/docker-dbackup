@@ -52,7 +52,7 @@ class Backup(BaseModel):
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None
     skip_tables: Optional[str] = None
-    retention_period: Optional[str] = None
+    max_backup_files: Optional[int] = None
     schedule: Optional[str] = None
     host_obj: Optional[Host] = None
     db_connection_obj: Optional[DBConnection] = None
@@ -94,7 +94,7 @@ class GlobalConfig(BaseModel):
     encryption_password: Optional[str] = Field(default="")
     compression_enabled: Optional[bool] = Field(default=True)
     skip_tables: Optional[str] = Field(default="")
-    retention_period: Optional[str] = Field(default="7 days")
+    max_backup_files: Optional[int] = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
 
     @field_validator("schedule")
@@ -170,7 +170,7 @@ class Config(BaseModel):
                 "encryption_password",
                 "compression_enabled",
                 "skip_tables",
-                "retention_period",
+                "max_backup_files",
                 "schedule",
             ]:
                 if getattr(backup, field) is None:
