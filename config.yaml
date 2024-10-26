@@ -30,6 +30,14 @@ hosts:
     password: "9Jp*2Lv@4zQ"
     protocol: "ssh"
     port: 22
+
+  - name: "primary_sftp"
+    host: "ssh-sftp-ftp-server"
+    username: "wise-fox"
+    password: "9Jp*2Lv@4zQ"
+    protocol: "sftp"
+    port: 22
+
   - name: "primary_ftp"
     host: "ssh-sftp-ftp-server"
     username: "agile-badger"
@@ -45,9 +53,16 @@ backup:
     skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
+  - name: "staging_sftp_backup"
+    host: "primary_sftp"
+    path: "/home/wise-fox/files"
+    db_connection: "staging_db"
+    skip_tables: "logs, cache"
+    schedule: "*/1 * * * *" # Run every minute
+
   - name: "staging_ftp_backup"
     host: "primary_ftp"
-    path: "/home/agile-badger/files"
+    path: "/files/test"
     db_connection: "staging_db"
     encryption_enabled: true
     encryption_password: "strongencryptionkey"

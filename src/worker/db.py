@@ -3,22 +3,23 @@ import subprocess
 import tempfile
 from datetime import datetime
 from loguru import logger
-from config import DBConnection
+from config import Backup
 
 
-def get_backup_file_path(
-    db_connection: DBConnection, backup_name: str, filename: str = None
-):
+def get_backup_file_path(backup_name: str, backup_filename: str = None):
     tmp_dir = tempfile.gettempdir()
-    prefix = filename if filename else f"{db_connection.name}_{db_connection.database}"
-    filename = f"{backup_name}_{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}.sql"
+    prefix = backup_filename if backup_filename else f"{backup_name}"
+    filename = f"{prefix}_{datetime.now().strftime('%Y%m%d%H%M%S')}.sql"
     return os.path.join(tmp_dir, filename)
 
 
-def dump_db(db_connection: DBConnection, filename: str = None, skip_tables: str = None):
+def dump_db(
+    backup: Backup,
+):
+    db_connection = backup.db_connection_obj
     logger.info(f"Dumping database: {db_connection.name} ({db_connection.database})")
     cnf_file_path = None
-    backup_file_path = get_backup_file_path(db_connection, filename)
+    backup_file_path = get_backup_file_path(backup.name, backup.filename)
 
     try:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as cnf_file:
@@ -39,8 +40,8 @@ port={db_connection.port}
             db_connection.database,
         ]
 
-        if skip_tables:
-            skip_tables_list = skip_tables.split(",")
+        if backup.skip_tables:
+            skip_tables_list = backup.skip_tables.split(",")
             command.extend(
                 f"--ignore-table={db_connection.database}.{table}"
                 for table in skip_tables_list

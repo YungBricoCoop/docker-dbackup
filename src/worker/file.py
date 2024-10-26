@@ -42,3 +42,13 @@ def move_file_to_folder(filepath, folder):
     except Exception as e:
         logger.error(f"Failed to move file: {e}")
         raise
+
+
+def get_filename_from_path(filepath):
+    """
+    Extracts the filename from a file path.
+
+    :param filepath: The path to the file.
+    :return: The filename.
+    """
+    return os.path.basename(filepath)

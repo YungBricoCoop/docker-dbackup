@@ -21,18 +21,19 @@ def create_ftp_directory_tree(ftp, remote_dir):
             ftp.mkd(current_dir)
 
 
-def send_file_over_ftp(local_filepath, remote_filepath, host: Host):
+def send_file_over_ftp(
+    local_filepath: str, remote_dir_path: str, remote_filename: str, host: Host
+):
     """
     Sends a file over FTP to a remote server.
 
     :param local_filepath: Path to the local file to send.
-    :param remote_filepath: Destination path on the remote server.
-    :param host: Hostname or IP address of the FTP server.
-    :param port: FTP port number (default is 21).
-    :param username: FTP username.
-    :param password: FTP password.
+    :param remote_dir_path: Destination directory path on the remote server.
+    :param remote_filename: Name of the file on the remote server.
+    :param host: Host configuration including hostname, port, username, and password.
     """
 
+    remote_filepath = os.path.join(remote_dir_path, remote_filename)
     remote_dest = f"{host.username}@{host.host}:{remote_filepath}"
     logger.info(f"Sending file over FTP: {local_filepath} -> {remote_dest}")
 
@@ -41,16 +42,15 @@ def send_file_over_ftp(local_filepath, remote_filepath, host: Host):
         ftp.connect(host=host.host, port=host.port)
         ftp.login(user=host.username, passwd=host.password)
 
-        remote_dir = os.path.dirname(remote_filepath)
-        if remote_dir:
+        if remote_dir_path:
             try:
-                ftp.cwd(remote_dir)
+                ftp.cwd(remote_dir_path)
             except error_perm:
-                create_ftp_directory_tree(ftp, remote_dir)
-                ftp.cwd(remote_dir)
-        # FIXME: The file get's written as the folder name
+                create_ftp_directory_tree(ftp, remote_dir_path)
+                ftp.cwd(remote_dir_path)
+
         with open(local_filepath, "rb") as file:
-            ftp.storbinary(f"STOR {os.path.basename(remote_filepath)}", file)
+            ftp.storbinary(f"STOR {remote_filename}", file)
 
         ftp.quit()
 

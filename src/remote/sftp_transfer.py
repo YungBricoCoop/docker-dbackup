@@ -4,18 +4,19 @@ from loguru import logger
 from config import Host
 
 
-def send_file_over_sftp(local_filepath, remote_filepath, host: Host):
+def send_file_over_sftp(
+    local_filepath: str, remote_dir_path: str, remote_filename: str, host: Host
+):
     """
     Sends a file over SFTP to a remote host.
 
     :param local_filepath: Path to the local file to send.
-    :param remote_filepath: Destination path on the remote host.
-    :param host: Hostname or IP address of the SFTP server.
-    :param port: SFTP port number (default is 22).
-    :param username: SFTP username.
-    :param password: SFTP password.
+    :param remote_dir_path: Destination directory path on the remote host.
+    :param remote_filename: Name of the file on the remote host.
+    :param host: Host configuration including hostname, port, username, and password.
     """
 
+    remote_filepath = os.path.join(remote_dir_path, remote_filename)
     remote_dest = f"{host.username}@{host.host}:{remote_filepath}"
     logger.info(f"Sending file over SFTP: {local_filepath} -> {remote_dest}")
 
@@ -25,11 +26,18 @@ def send_file_over_sftp(local_filepath, remote_filepath, host: Host):
 
         sftp = paramiko.SFTPClient.from_transport(transport)
 
-        remote_dir = os.path.dirname(remote_filepath)
         try:
-            sftp.chdir(remote_dir)
+            sftp.chdir(remote_dir_path)
         except IOError:
-            sftp.chdir(remote_dir)
+            dir_paths = remote_dir_path.strip("/").split("/")
+            current_dir = ""
+            for dir in dir_paths:
+                current_dir += f"/{dir}"
+                try:
+                    sftp.mkdir(current_dir)
+                except IOError:
+                    pass
+                sftp.chdir(current_dir)
 
         sftp.put(local_filepath, remote_filepath)
 

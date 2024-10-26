@@ -5,9 +5,7 @@ from worker.db import dump_db
 from worker.compression import compress_file
 from worker.security import encrypt_file
 from worker.file import delete_file, move_file_to_folder
-from remote.ftp_transfer import send_file_over_ftp
-from remote.sftp_transfer import send_file_over_sftp
-from remote.ssh_transfer import send_file_over_ssh
+from remote.remote_transfer import remote_transfer
 
 
 def backup_task(backup: Backup):
@@ -16,7 +14,7 @@ def backup_task(backup: Backup):
     compressed_dump_file = None
     encrypted_dump_file = None
     try:
-        dump_file = dump_db(backup.db_connection_obj, backup.name)
+        dump_file = dump_db(backup)
 
         if backup.compression_enabled:
             compressed_dump_file = compress_file(dump_file)
@@ -33,23 +31,9 @@ def backup_task(backup: Backup):
                 file_to_send,
                 backup.path,
             )
-
-        elif backup.host_obj.protocol == "ssh":
-            send_file_over_ssh(
-                file_to_send,
-                backup.path,
-                backup.host_obj,
-            )
-
-        elif backup.host_obj.protocol == "sftp":
-            send_file_over_sftp(
-                file_to_send,
-                backup.path,
-                backup.host_obj,
-            )
-
-        elif backup.host_obj.protocol == "ftp":
-            send_file_over_ftp(
+        else:
+            remote_transfer(
+                backup.host_obj.protocol,
                 file_to_send,
                 backup.path,
                 backup.host_obj,
