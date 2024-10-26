@@ -7,7 +7,7 @@ from loguru import logger
 from scp import SCPClient
 
 from config import Host
-from worker.file import get_filename_from_path
+from worker.file import get_filename_from_path, get_backups_to_delete
 
 DEFAULT_TIMEOUT_IN_SECONDS = 10
 
@@ -220,52 +220,6 @@ def send_file_over_ftp(
         raise
 
 
-def get_file_date_from_filename(filename: str, filename_prefix: str, date_format: str):
-    """
-    Extracts the date from a backup file name.
-
-    :param filename: The backup file name.
-    :param filename_prefix: The prefix of the backup file name.
-    :param date_format: The date format used in the backup file name.
-    :return: The date extracted from the file name.
-    """
-    try:
-        date_str = filename[len(filename_prefix) :]
-        date_str = date_str.split(".sql")[0]
-        return datetime.strptime(date_str, date_format)
-    except Exception as e:
-        logger.error(f"Failed to extract date from filename '{filename}': {e}")
-        return None
-
-
-def get_files_to_delete(files, filename_prefix, date_format, max_backup_files):
-    """
-    Returns a list of files to delete based on the max_backup_files limit.
-
-    :param files: List of backup files.
-    :param filename_prefix: Prefix of the backup filenames.
-    :param date_format: Date format used in the backup filenames.
-    :param max_backup_files: Maximum number of backup files to keep.
-    :return: List of files to delete.
-    """
-    if not files:
-        return []
-
-    files = [file for file in files if file.startswith(filename_prefix)]
-    files_to_delete = []
-
-    for file in files:
-        date = get_file_date_from_filename(file, filename_prefix, date_format)
-        if not date:
-            continue
-        files_to_delete.append((date, file))
-
-    files_to_delete.sort()
-    if len(files_to_delete) > max_backup_files:
-        return [file for _, file in files_to_delete[:-max_backup_files]]
-    return []
-
-
 def remove_old_backups_scp(
     remote_dir_path: str,
     filename_prefix: str,
@@ -289,7 +243,7 @@ def remove_old_backups_scp(
         stdin, stdout, stderr = ssh.exec_command(f"ls -1 {remote_dir_path}")
         files = stdout.read().decode().splitlines()
 
-        files_to_delete = get_files_to_delete(
+        files_to_delete = get_backups_to_delete(
             files, filename_prefix, date_format, max_backup_files
         )
 
@@ -335,7 +289,7 @@ def remove_old_backups_sftp(
         sftp.chdir(remote_dir_path)
         files = sftp.listdir()
 
-        files_to_delete = get_files_to_delete(
+        files_to_delete = get_backups_to_delete(
             files, filename_prefix, date_format, max_backup_files
         )
         if len(files_to_delete) == 0:
@@ -380,7 +334,7 @@ def remove_old_backups_ftp(
         ftp.cwd(remote_dir_path)
         files = ftp.nlst()
 
-        files_to_delete = get_files_to_delete(
+        files_to_delete = get_backups_to_delete(
             files, filename_prefix, date_format, max_backup_files
         )
 
