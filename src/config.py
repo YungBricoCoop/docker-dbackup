@@ -116,7 +116,7 @@ class GlobalConfig(BaseModel):
 
 class Log(BaseModel):
     level: str = Field(default="INFO", pattern="DEBUG|INFO|WARNING|ERROR|CRITICAL")
-    filename: Optional[str] = Field(default="/var/log/backup.log")
+    filename: Optional[str] = Field(default="/dbackup/storage/logs/dbackup.log")
     rotation_interval: Optional[str] = Field(default="1 day")
     retention_period: Optional[str] = Field(default="7 days")
     format: Optional[str] = Field(

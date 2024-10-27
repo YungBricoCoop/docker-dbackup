@@ -6,7 +6,7 @@ from scheduler import start_scheduler
 from worker import tasks
 
 if __name__ == "__main__":
-    config = get_config("config.yaml")
+    config = get_config("/dbackup/config/config.yaml")
     if not config:
         sys.exit(1)
     setup_logger(config.log)

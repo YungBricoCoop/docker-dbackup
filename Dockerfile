@@ -4,11 +4,17 @@ RUN apk update && apk add --no-cache \
   mysql-client \
   mariadb-connector-c \
   openssl \
-  openssh-client
+  openssh-client \
+  rm -rf /var/cache/apk/*
 
-WORKDIR /app
+WORKDIR /dbackup
 
 COPY src/. ./
 RUN pip install --no-cache-dir -r requirements.txt
+
+RUN mkdir -p /dbackup/config /dbackup/storage
+
+VOLUME /dbackup/config
+VOLUME /dbackup/storage
 
 ENTRYPOINT ["python3", "main.py"]

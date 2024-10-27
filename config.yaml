@@ -52,7 +52,7 @@ backups:
   - id: "production_local_backup"
     db_connection_id: "production_db"
     local: true
-    path: "/var/tmp"
+    path: "/dbackup/storage"
     schedule: "*/1 * * * *" # Run every minute
 
 notifications:
