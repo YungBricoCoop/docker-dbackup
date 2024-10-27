@@ -40,6 +40,22 @@ class Host(BaseModel):
         return model
 
 
+class Notification(BaseModel):
+    name: str
+    method: str = Field(pattern="email|discord")
+    notify_on_fail: bool = Field(default=True)
+    notify_on_success: bool = Field(default=False)
+    webhook_url: Optional[str] = Field(default="")
+    smtp_server: Optional[str] = Field(default="")
+    smtp_port: Optional[int] = Field(default=587)
+    smtp_user: Optional[str] = Field(default="")
+    smtp_password: Optional[str] = Field(default="")
+    smtp_sender: Optional[str] = Field(default="")
+    smtp_recipients: Optional[List[str]] = Field(default=[])
+    smtp_use_tls: Optional[bool] = Field(default=True)
+    smtp_use_ssl: Optional[bool] = Field(default=False)
+
+
 class Backup(BaseModel):
     name: str
     host: Optional[str] = None
@@ -55,8 +71,10 @@ class Backup(BaseModel):
     dump_options: Optional[List[str]] = None
     max_backup_files: Optional[int] = None
     schedule: Optional[str] = None
+    notifications: Optional[List[str]] = None
     host_obj: Optional[Host] = None
     db_connection_obj: Optional[DBConnection] = None
+    notification_objs: Optional[List[Notification]] = None
 
     @field_validator("host")
     def validate_host(cls, value, info):
@@ -78,17 +96,6 @@ class Backup(BaseModel):
         return value
 
 
-class Notification(BaseModel):
-    method: str = Field(default="email", pattern="email|discord")
-    notify_on_fail: bool = Field(default=True)
-    notify_on_success: bool = Field(default=False)
-    smtp_server: Optional[str] = Field(default="")
-    smtp_port: Optional[int] = Field(default=587)
-    smtp_user: Optional[str] = Field(default="")
-    smtp_password: Optional[str] = Field(default="")
-    smtp_recipient: Optional[str] = Field(default="")
-
-
 class GlobalConfig(BaseModel):
     date_format: Optional[str] = Field(default="%Y-%m-%d_%H-%M-%S")
     encryption_enabled: Optional[bool] = Field(default=False)
@@ -98,6 +105,7 @@ class GlobalConfig(BaseModel):
     dump_options: Optional[List[str]] = Field(default=[])
     max_backup_files: Optional[int] = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
+    notifications: Optional[List[str]] = Field(default=[])
 
     @field_validator("schedule")
     def validate_schedule(cls, value):
@@ -141,6 +149,11 @@ class Config(BaseModel):
         if len(backup_names) != len(set(backup_names)):
             raise ValueError("Duplicate names found in 'backup'")
 
+        # check for unique names in notifications
+        notification_names = [notification.name for notification in model.notifications]
+        if len(notification_names) != len(set(notification_names)):
+            raise ValueError("Duplicate names found in 'notifications'")
+
         # check db_connection and host references in backup
         db_connection_names = set(db_names)
         host_name_set = set(host_names)
@@ -156,15 +169,6 @@ class Config(BaseModel):
                     f"Backup '{backup.name}': db_connection '{backup.db_connection}' is not defined in db_connections"
                 )
 
-            # set host_obj and db_connection_obj
-            backup.host_obj = next(
-                (host for host in model.hosts if host.name == backup.host), None
-            )
-            backup.db_connection_obj = next(
-                (db for db in model.db_connections if db.name == backup.db_connection),
-                None,
-            )
-
             # set defaults from global_config if not set in backup
             for field in [
                 "date_format",
@@ -175,9 +179,26 @@ class Config(BaseModel):
                 "dump_options",
                 "max_backup_files",
                 "schedule",
+                "notifications",
             ]:
                 if getattr(backup, field) is None:
                     setattr(backup, field, getattr(model.global_config, field))
+
+            # set host_obj, db_connection_obj and notification_objs
+            backup.host_obj = next(
+                (host for host in model.hosts if host.name == backup.host), None
+            )
+            backup.db_connection_obj = next(
+                (db for db in model.db_connections if db.name == backup.db_connection),
+                None,
+            )
+
+            backup.notification_objs = [
+                notification
+                for notification in model.notifications
+                if notification.name in backup.notifications
+            ]
+
         return model
 
 

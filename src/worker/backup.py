@@ -253,7 +253,6 @@ def upload_backup(
         remote_filename = get_filename_from_path(local_filepath)
         remote_filepath = os.path.join(remote_dir_path, remote_filename)
         client.upload_file(local_filepath, remote_filepath)
-        logger.info(f"File sent successfully to {remote_filepath}")
     except Exception as e:
         logger.error(f"Failed to send file: {e}")
         raise

@@ -1,11 +1,20 @@
 from loguru import logger
 
 from config import Backup
+from worker.backup import remove_old_backups, upload_backup
 from worker.compression import compress_file
 from worker.db import dump_db
-from worker.file import delete_file, move_file_to_folder, get_backup_file
-from worker.backup import upload_backup, remove_old_backups
+from worker.file import delete_file, get_backup_file
+from worker.notification import send_notifications
 from worker.security import encrypt_file
+
+
+def get_backup_task_success_message(backup: Backup) -> str:
+    return f"[{backup.name}] Backup task completed successfully"
+
+
+def get_backup_task_failure_message(backup: Backup, error: Exception) -> str:
+    return f"[{backup.name}] Backup task failed: {error}"
 
 
 def backup_task(backup: Backup):
@@ -46,9 +55,19 @@ def backup_task(backup: Backup):
             backup.host_obj,
         )
 
-        logger.success(f"[{backup.name}] Backup task completed successfully")
+        logger.success(get_backup_task_success_message(backup))
+        send_notifications(
+            success=True,
+            message=get_backup_task_success_message(backup),
+            notifications=backup.notification_objs,
+        )
     except Exception as e:
-        logger.error(f"[{backup.name}] Backup task failed: {e}")
+        logger.error(get_backup_task_failure_message(backup, e))
+        send_notifications(
+            success=False,
+            message=get_backup_task_failure_message(backup, e),
+            notifications=backup.notification_objs,
+        )
     finally:
         if dump_file:
             delete_file(dump_file)

@@ -52,6 +52,7 @@ backup:
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
     schedule: "*/1 * * * *" # Run every minute
+    notifications: ["email_notification"]
 
   - name: "staging_sftp_backup"
     host: "primary_sftp"
@@ -74,11 +75,15 @@ backup:
     schedule: "*/1 * * * *" # Run every minute
 
 notifications:
-  - method: "email" # none, email
+  - name: "email_notification"
+    method: "email" # email, discord
     notify_on_fail: true
     notify_on_success: false
-    smtp_server: "smtp.example.com"
+    smtp_server: ""
     smtp_port: 587
-    smtp_user: "notification@example.com"
-    smtp_password: "securepassword123"
-    smtp_recipient: "admin@example.com"
+    smtp_user: ""
+    smtp_password: ""
+    smtp_sender: ""
+    smtp_recipients: [""]
+    smtp_use_ssl: true
+    smtp_use_tls: false
