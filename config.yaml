@@ -11,14 +11,14 @@ global_config:
 
 db_connections:
   - name: "staging_db"
-    host: "db"
+    host: "staging-db"
     port: 3306
     username: "staging_user"
     password: "stagingpassword"
     database: "staging_db"
 
   - name: "production_db"
-    host: "production-db.example.com"
+    host: "production-db"
     port: 3306
     username: "prod_user"
     password: "prodpassword"
@@ -32,65 +32,39 @@ hosts:
     protocol: "scp"
     port: 22
 
-  - name: "primary_sftp"
-    host: "ssh-sftp-ftp-server"
-    username: "wise-fox"
-    password: "9Jp*2Lv@4zQ"
-    protocol: "sftp"
-    port: 22
-
-  - name: "primary_ftp"
-    host: "ssh-sftp-ftp-server"
-    username: "agile-badger"
-    password: "6Hv9]3kJt!^"
-    protocol: "ftp"
-    port: 21
-
 backup:
-  - name: "staging_scp_backup"
+  - name: "production_scp_backup"
     host: "primary_scp"
     path: "/home/wise-fox/files"
+    encryption_enabled: true
+    encryption_password: "passwordthatishardtoguess"
     db_connection: "staging_db"
     schedule: "*/1 * * * *" # Run every minute
     notifications: ["email_notification", "discord_notification"]
 
-  - name: "staging_sftp_backup"
-    host: "primary_sftp"
+  - name: "staging_scp_backup"
+    host: "primary_scp"
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
-    schedule: "*/1 * * * *" # Run every minute
+    schedule: "*/5 * * * *" # Run every 5 minutes
+    notifications: ["email_notification", "discord_notification"]
 
-  - name: "staging_ftp_backup"
-    host: "primary_ftp"
-    path: "/files/ftp"
-    db_connection: "staging_db"
-    encryption_enabled: true
-    encryption_password: "strongencryptionkey"
-    schedule: "*/1 * * * *" # Run every minute
-
-  - name: "staging_local_backup"
+  - name: "production_local_backup"
     local: true
     path: "/var/tmp"
-    db_connection: "staging_db"
+    db_connection: "production_db"
     schedule: "*/1 * * * *" # Run every minute
 
 notifications:
   - name: "email_notification"
-    method: "email"
+    method: "email" # email, discord
     notify_on_fail: true
-    notify_on_success: true
-    smtp_server: "mail.infomaniak.com"
-    smtp_port: 465
-    smtp_user: "no-reply@mailemon.ch"
-    smtp_password: "dAu923jKE5nXv9wMW4Fti903"
-    smtp_recipient: "elwan.mayencourt@gmail.com"
-    smtp_sender: "no-reply@mailemon.ch"
-    smtp_recipients: ["elwan.mayencourt@gmail.com"]
+    notify_on_success: false
+    smtp_server: ""
+    smtp_port: 587
+    smtp_user: ""
+    smtp_password: ""
+    smtp_sender: ""
+    smtp_recipients: [""]
     smtp_use_ssl: true
     smtp_use_tls: false
-
-  - name: "discord_notification"
-    method: "discord"
-    notify_on_fail: true
-    notify_on_success: true
-    webhook_url: "https://discord.com/api/webhooks/1300082627742535680/GE9CIh8jsl_ZVvNigpUYyEymttfF73I6q_y7tYbcuxFFM-gEde9NVK8uehKZt_mOLhbE"
