@@ -5,10 +5,14 @@ import smtplib
 from email.mime.text import MIMEText
 from config import Notification
 from loguru import logger
+from data.BackupData import BackupData
 
 
 # Abstract Base Class for Notification Clients
 class NotificationClient(ABC):
+    SUCCESS_COLOR = 0x2ECC71
+    ERROR_COLOR = 0xE74C3C
+
     @abstractmethod
     def connect(self):
         pass
@@ -18,7 +22,7 @@ class NotificationClient(ABC):
         pass
 
     @abstractmethod
-    def send_message(self, success, message):
+    def send_message(self, backup_data: BackupData):
         pass
 
 
@@ -33,16 +37,59 @@ class DiscordNotificationClient(NotificationClient):
     def disconnect(self):
         pass
 
-    def send_message(self, success, message):
-        self._send_message(message)
+    def send_message(self, backup_data: BackupData):
+        self._send_message(backup_data)
 
-    def _send_message(self, content):
-        data = {"content": content}
+    def _send_message(self, backup_data: BackupData):
+        color = self.SUCCESS_COLOR if backup_data.success else self.ERROR_COLOR
+
+        embed_data = {
+            "embeds": [
+                {
+                    "title": backup_data.status_short,
+                    "color": color,
+                    "fields": [
+                        {
+                            "name": "Status",
+                            "value": backup_data.status,
+                            "inline": False,
+                        },
+                        {
+                            "name": "Database",
+                            "value": backup_data.database,
+                            "inline": True,
+                        },
+                        {
+                            "name": "Host",
+                            "value": f"{backup_data.host} ({backup_data.protocol})",
+                            "inline": True,
+                        },
+                        {
+                            "name": "Compression",
+                            "value": "✅" if backup_data.compress else "❌",
+                            "inline": False,
+                        },
+                        {
+                            "name": "Encryption",
+                            "value": "✅" if backup_data.encrypt else "❌",
+                            "inline": False,
+                        },
+                        {
+                            "name": "Duration",
+                            "value": backup_data.duration_in_seconds,
+                            "inline": False,
+                        },
+                    ],
+                }
+            ]
+        }
+
         try:
-            response = requests.post(self.webhook_url, json=data)
+            response = requests.post(self.webhook_url, json=embed_data)
             response.raise_for_status()
+            logger.debug("Notification sent successfully!")
         except requests.exceptions.RequestException as e:
-            print(f"Failed to send Discord notification: {e}")
+            logger.error(f"Failed to send Discord notification: {e}")
 
 
 # Email Notification Client
@@ -88,8 +135,52 @@ class EmailNotificationClient(NotificationClient):
             self.server.quit()
             self.server = None
 
-    def send_message(self, success, message):
-        subject = "Backup Successful" if success else "Backup Failed"
+    def send_message(self, backup_data: BackupData):
+        subject = backup_data.status_short
+        color = self.SUCCESS_COLOR if backup_data.success else self.ERROR_COLOR
+        message = f"""
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; font-family: Arial, sans-serif; border: 1px solid #cccccc;">
+    <tr>
+        <td style="padding: 16px; background-color: #{color:06x}; color: #ffffff; font-size: 18px; font-weight: bold;">
+            {backup_data.status_short}
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 16px;">
+            <p style="margin: 0;"><strong>Status:</strong> {backup_data.status}</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 16px;">
+            <table width="100%" style="font-family: Arial, sans-serif;">
+                <tr>
+                    <td style="width: 50%; padding: 8px 0;">
+                        <strong>Database:</strong> {backup_data.database}
+                    </td>
+                    <td style="width: 50%; padding: 8px 0;">
+                        <strong>Host:</strong> {backup_data.host} ({backup_data.protocol})
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 16px;">
+            <p style="margin: 0;"><strong>Compression:</strong> {"✅" if backup_data.compress else "❌"}</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 16px;">
+            <p style="margin: 0;"><strong>Encryption:</strong> {"✅" if backup_data.encrypt else "❌"}</p>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 16px;">
+            <p style="margin: 0;"><strong>Duration:</strong> {backup_data.duration_in_seconds} seconds</p>
+        </td>
+    </tr>
+</table>
+"""
         self._send_email(subject, message)
 
     def _send_email(self, subject, body):
@@ -97,7 +188,7 @@ class EmailNotificationClient(NotificationClient):
             logger.error("SMTP server connection is not established")
             return
 
-        msg = MIMEText(body)
+        msg = MIMEText(body, "html")
         msg["Subject"] = subject
         msg["From"] = self.sender
         msg["To"] = ", ".join(self.recipients)
@@ -109,10 +200,10 @@ class EmailNotificationClient(NotificationClient):
             logger.error(f"Failed to send email: {e}")
 
 
-def send_notifications(success, message, notifications: List[Notification]):
+def send_notifications(backup_data: BackupData, notifications: List[Notification]):
     for notification in notifications:
-        if (notification.notify_on_success and success) or (
-            notification.notify_on_fail and not success
+        if (notification.notify_on_success and backup_data.success) or (
+            notification.notify_on_fail and not backup_data.success
         ):
             if notification.method == "discord":
                 client = DiscordNotificationClient(notification.webhook_url)
@@ -132,5 +223,5 @@ def send_notifications(success, message, notifications: List[Notification]):
                 continue
 
             client.connect()
-            client.send_message(success, message)
+            client.send_message(backup_data)
             client.disconnect()
