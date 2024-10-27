@@ -8,9 +8,9 @@ from loguru import logger
 def start_scheduler(backup_task, config: Config):
     logger.info("Starting scheduler...")
     scheduler = BackgroundScheduler()
-    for backup in config.backup:
+    for backup in config.backups:
         trigger = CronTrigger.from_crontab(backup.schedule)
-        scheduler.add_job(backup_task, trigger=trigger, args=[backup], id=backup.name)
+        scheduler.add_job(backup_task, trigger=trigger, args=[backup], id=backup.id)
     scheduler.start()
     try:
         while True:

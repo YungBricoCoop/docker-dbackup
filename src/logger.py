@@ -6,7 +6,7 @@ from config import Log
 def setup_logger(config: Log):
     logger.remove()
     logger.add(
-        config.file,
+        config.filename,
         level=config.level,
         rotation=config.rotation_interval,
         retention=config.retention_period,

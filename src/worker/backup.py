@@ -53,18 +53,18 @@ class SCPBackupClient(BackupClient):
 
         if self.host.password:
             self.ssh.connect(
-                hostname=self.host.host,
+                hostname=self.host.hostname,
                 port=self.host.port,
                 username=self.host.username,
                 password=self.host.password,
                 timeout=DEFAULT_TIMEOUT_IN_SECONDS,
             )
-        elif self.host.private_ssh_key:
+        elif self.host.ssh_key:
             self.ssh.connect(
-                hostname=self.host.host,
+                hostname=self.host.hostname,
                 port=self.host.port,
                 username=self.host.username,
-                key_filename=self.host.private_ssh_key,
+                key_filename=self.host.ssh_key,
                 timeout=DEFAULT_TIMEOUT_IN_SECONDS,
             )
 
@@ -107,18 +107,18 @@ class SFTPBackupClient(BackupClient):
 
         if self.host.password:
             self.ssh.connect(
-                hostname=self.host.host,
+                hostname=self.host.hostname,
                 port=self.host.port,
                 username=self.host.username,
                 password=self.host.password,
                 timeout=DEFAULT_TIMEOUT_IN_SECONDS,
             )
-        elif self.host.private_ssh_key:
+        elif self.host.ssh_key:
             self.ssh.connect(
-                hostname=self.host.host,
+                hostname=self.host.hostname,
                 port=self.host.port,
                 username=self.host.username,
-                key_filename=self.host.private_ssh_key,
+                key_filename=self.host.ssh_key,
                 timeout=DEFAULT_TIMEOUT_IN_SECONDS,
             )
 
@@ -161,7 +161,7 @@ class FTPBackupClient(BackupClient):
     def connect(self):
         self.ftp = FTP()
         self.ftp.connect(
-            self.host.host, self.host.port, timeout=DEFAULT_TIMEOUT_IN_SECONDS
+            self.host.hostname, self.host.port, timeout=DEFAULT_TIMEOUT_IN_SECONDS
         )
         self.ftp.login(user=self.host.username, passwd=self.host.password)
 

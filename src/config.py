@@ -6,8 +6,8 @@ from loguru import logger
 
 
 class DBConnection(BaseModel):
-    name: str
-    host: str
+    id: str
+    hostname: str
     port: int = Field(default=3306)
     username: str
     password: str
@@ -15,11 +15,11 @@ class DBConnection(BaseModel):
 
 
 class Host(BaseModel):
-    name: str
-    host: str
+    id: str
+    hostname: str
     username: str
     password: Optional[str] = None
-    private_ssh_key: Optional[str] = None
+    ssh_key: Optional[str] = None
     port: int
     protocol: str = Field(pattern="scp|sftp|ftp")
 
@@ -29,19 +29,19 @@ class Host(BaseModel):
             raise ValueError(f"Password must be specified for FTP protocol.")
 
         if model.protocol in ["scp", "sftp"]:
-            if not model.password and not model.private_ssh_key:
+            if not model.password and not model.ssh_key:
                 raise ValueError(
-                    "Either password or private SSH key must be specified for SCP/SFTP protocol."
+                    "Either password or SSH key must be specified for SCP/SFTP protocol."
                 )
-            if model.password and model.private_ssh_key:
+            if model.password and model.ssh_key:
                 raise ValueError(
-                    "Either password or private SSH key can be used for SCP/SFTP protocol."
+                    "Either password or SSH key can be used for SCP/SFTP protocol."
                 )
         return model
 
 
 class Notification(BaseModel):
-    name: str
+    id: str
     method: str = Field(pattern="email|discord")
     notify_on_fail: bool = Field(default=True)
     notify_on_success: bool = Field(default=False)
@@ -57,13 +57,17 @@ class Notification(BaseModel):
 
 
 class Backup(BaseModel):
-    name: str
-    host: Optional[str] = None
+    id: str
+    host_id: Optional[str] = None
+    db_connection_id: str
+    notification_ids: Optional[List[str]] = None
+    host_obj: Optional[Host] = None
+    db_connection_obj: Optional[DBConnection] = None
+    notification_objs: Optional[List[Notification]] = None
     local: bool = Field(default=False)
     path: str  # path to the backup directory (remote or local)
-    db_connection: str
-    filename: str = None
-    date_format: str = None
+    filename: Optional[str] = None
+    date_format: Optional[str] = None
     encryption_enabled: Optional[bool] = None
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None
@@ -71,21 +75,17 @@ class Backup(BaseModel):
     dump_options: Optional[List[str]] = None
     max_backup_files: Optional[int] = None
     schedule: Optional[str] = None
-    notifications: Optional[List[str]] = None
-    host_obj: Optional[Host] = None
-    db_connection_obj: Optional[DBConnection] = None
-    notification_objs: Optional[List[Notification]] = None
 
-    @field_validator("host")
-    def validate_host(cls, value, info):
+    @field_validator("host_id")
+    def validate_host_id(cls, value, info):
         local = info.data.get("local")
         if not local and not value:
             raise ValueError(
-                f"Either 'host' or 'local' must be specified for backup '{info.data.get('name')}'"
+                f"Either 'host_id' or 'local' must be specified for backup '{info.data.get('id')}'"
             )
         if local and value:
             raise ValueError(
-                f"Only one of 'host' or 'local' can be specified for backup '{info.data.get('name')}'"
+                f"Only one of 'host_id' or 'local' can be specified for backup '{info.data.get('id')}'"
             )
         return value
 
@@ -105,7 +105,7 @@ class GlobalConfig(BaseModel):
     dump_options: Optional[List[str]] = Field(default=[])
     max_backup_files: Optional[int] = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
-    notifications: Optional[List[str]] = Field(default=[])
+    notification_ids: Optional[List[str]] = Field(default=[])
 
     @field_validator("schedule")
     def validate_schedule(cls, value):
@@ -116,7 +116,7 @@ class GlobalConfig(BaseModel):
 
 class Log(BaseModel):
     level: str = Field(default="INFO", pattern="DEBUG|INFO|WARNING|ERROR|CRITICAL")
-    file: Optional[str] = Field(default="/var/log/backup.log")
+    filename: Optional[str] = Field(default="/var/log/backup.log")
     rotation_interval: Optional[str] = Field(default="1 day")
     retention_period: Optional[str] = Field(default="7 days")
     format: Optional[str] = Field(
@@ -128,49 +128,51 @@ class Config(BaseModel):
     global_config: GlobalConfig
     db_connections: List[DBConnection]
     hosts: List[Host]
-    backup: List[Backup]
+    backups: List[Backup]
     notifications: Optional[List[Notification]] = Field(default=[])
     log: Optional[Log] = Field(default=Log())
 
     @model_validator(mode="after")
     def validate_backups(cls, model):
-        # check for unique names in db_connections
-        db_names = [db.name for db in model.db_connections]
-        if len(db_names) != len(set(db_names)):
-            raise ValueError("Duplicate names found in 'db_connections'")
+        # check for unique ids in db_connections
+        db_ids = [db.id for db in model.db_connections]
+        if len(db_ids) != len(set(db_ids)):
+            raise ValueError("Duplicate ids found in 'db_connections'")
 
-        # check for unique names in hosts
-        host_names = [host.name for host in model.hosts]
-        if len(host_names) != len(set(host_names)):
-            raise ValueError("Duplicate names found in 'hosts'")
+        # check for unique ids in hosts
+        host_ids = [host.id for host in model.hosts]
+        if len(host_ids) != len(set(host_ids)):
+            raise ValueError("Duplicate ids found in 'hosts'")
 
-        # check for unique names in backup
-        backup_names = [backup.name for backup in model.backup]
-        if len(backup_names) != len(set(backup_names)):
-            raise ValueError("Duplicate names found in 'backup'")
+        # check for unique ids in backups
+        backup_ids = [backup.id for backup in model.backups]
+        if len(backup_ids) != len(set(backup_ids)):
+            raise ValueError("Duplicate ids found in 'backups'")
 
-        # check for unique names in notifications
-        notification_names = [notification.name for notification in model.notifications]
-        if len(notification_names) != len(set(notification_names)):
-            raise ValueError("Duplicate names found in 'notifications'")
+        # check for unique ids in notifications
+        notification_ids_list = [
+            notification.id for notification in model.notifications
+        ]
+        if len(notification_ids_list) != len(set(notification_ids_list)):
+            raise ValueError("Duplicate ids found in 'notifications'")
 
-        # check db_connection and host references in backup
-        db_connection_names = set(db_names)
-        host_name_set = set(host_names)
+        # check db_connection_id and host_id references in backup
+        db_connection_id_set = set(db_ids)
+        host_id_set = set(host_ids)
 
-        for backup in model.backup:
-            if not backup.local and backup.host not in host_name_set:
+        for backup in model.backups:
+            if not backup.local and backup.host_id not in host_id_set:
                 raise ValueError(
-                    f"Backup '{backup.name}': host '{backup.host}' is not defined in hosts, if you want to use a local backup, set 'local: true'"
+                    f"Backup '{backup.id}': host_id '{backup.host_id}' is not defined in hosts, if you want to use a local backup, set 'local: true'"
                 )
 
-            if backup.db_connection not in db_connection_names:
+            if backup.db_connection_id not in db_connection_id_set:
                 raise ValueError(
-                    f"Backup '{backup.name}': db_connection '{backup.db_connection}' is not defined in db_connections"
+                    f"Backup '{backup.id}': db_connection_id '{backup.db_connection_id}' is not defined in db_connections"
                 )
 
             # set defaults from global_config if not set in backup
-            for field in [
+            for field_name in [
                 "date_format",
                 "encryption_enabled",
                 "encryption_password",
@@ -179,24 +181,26 @@ class Config(BaseModel):
                 "dump_options",
                 "max_backup_files",
                 "schedule",
-                "notifications",
+                "notification_ids",
             ]:
-                if getattr(backup, field) is None:
-                    setattr(backup, field, getattr(model.global_config, field))
+                if getattr(backup, field_name) is None:
+                    setattr(
+                        backup, field_name, getattr(model.global_config, field_name)
+                    )
 
             # set host_obj, db_connection_obj and notification_objs
             backup.host_obj = next(
-                (host for host in model.hosts if host.name == backup.host), None
+                (host for host in model.hosts if host.id == backup.host_id), None
             )
             backup.db_connection_obj = next(
-                (db for db in model.db_connections if db.name == backup.db_connection),
+                (db for db in model.db_connections if db.id == backup.db_connection_id),
                 None,
             )
 
             backup.notification_objs = [
                 notification
                 for notification in model.notifications
-                if notification.name in backup.notifications
+                if notification.id in (backup.notification_ids or [])
             ]
 
         return model

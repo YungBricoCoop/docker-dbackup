@@ -17,7 +17,7 @@ def dump_db(
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as cnf_file:
             cnf_file.write(
                 f"""[client]
-host={db_connection.host}
+host={db_connection.hostname}
 user={db_connection.username}
 password={db_connection.password}
 port={db_connection.port}

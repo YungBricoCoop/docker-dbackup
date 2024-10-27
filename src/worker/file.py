@@ -58,18 +58,18 @@ def get_filename_from_path(filepath):
 
 
 def get_backup_file(
-    backup_name: str, backup_filename: str = None, date_format: str = None
+    backup_id: str, backup_filename: str = None, date_format: str = None
 ):
     """
     Generates a backup file name and path.
 
-    :param backup_name: The name of the backup.
+    :param backup_id: The name of the backup.
     :param backup_filename: The filename of the backup.
     :param date_format: The date format to use in the filename.
     :return: A tuple containing the prefix, filename, and path.
     """
     tmp_dir = tempfile.gettempdir()
-    prefix = backup_filename if backup_filename else f"{backup_name}" + "_"
+    prefix = backup_filename if backup_filename else f"{backup_id}" + "_"
     filename = f"{prefix}{datetime.now().strftime(date_format)}.sql"
     path = os.path.join(tmp_dir, filename)
     return prefix, filename, path

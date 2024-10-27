@@ -11,16 +11,16 @@ from data import BackupData
 
 
 def backup_task(backup: Backup):
-    logger.info(f"[{backup.name}] Starting backup task...")
+    logger.info(f"[{backup.id}] Starting backup task...")
 
     dump_file = None
     compressed_dump_file = None
     encrypted_dump_file = None
     protocol = backup.host_obj.protocol if not backup.local else "local"
-    host = backup.host_obj.host if not backup.local else "local"
+    host = backup.host_obj.hostname if not backup.local else "local"
 
     backup_data = BackupData.BackupData(
-        backup.name,
+        backup.id,
         backup.db_connection_obj.database,
         host,
         protocol,
@@ -30,7 +30,7 @@ def backup_task(backup: Backup):
 
     try:
         backup_file_prefix, backup_filename, backup_filepath = get_backup_file(
-            backup.name, backup.filename, backup.date_format
+            backup.id, backup.filename, backup.date_format
         )
         dump_file = dump_db(backup, backup_filepath)
 
@@ -66,6 +66,7 @@ def backup_task(backup: Backup):
             backup_data=backup_data,
             notifications=backup.notification_objs,
         )
+
     except Exception as e:
         backup_data.set_status(success=False, error=str(e))
         logger.error(backup_data.status_short)

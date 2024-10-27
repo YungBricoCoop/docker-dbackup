@@ -4,14 +4,14 @@ from datetime import datetime
 class BackupData:
     def __init__(
         self,
-        name: str,
+        id: str,
         database: str,
         host: str,
         protocol: str,
         compress: bool,
         encrypt: bool,
     ):
-        self.name = name
+        self.id = id
         self.database = database
         self.host = host
         self.protocol = protocol
@@ -26,16 +26,16 @@ class BackupData:
         self.duration_in_seconds = None
 
     def _get_backup_data_succes_status(self) -> str:
-        return f"[{self.name}] Backup task completed successfully!"
+        return f"[{self.id}] Backup task completed successfully!"
 
     def _get_backup_data_fail_status(self, error: str) -> str:
-        return f"[{self.name}] Backup task failed: {error}"
+        return f"[{self.id}] Backup task failed: {error}"
 
     def set_status(self, success, error=None):
         self.status_short = (
-            f"✅ Backup [{self.name}] successful ✅"
+            f"✅ Backup [{self.id}] successful ✅"
             if success
-            else f"❌ Backup [{self.name}] failed ❌"
+            else f"❌ Backup [{self.id}] failed ❌"
         )
         self.status = "Operational" if success else f"Error - {error}"
         self.success = success
