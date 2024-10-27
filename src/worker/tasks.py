@@ -61,14 +61,14 @@ def backup_task(backup: Backup):
         )
 
         backup_data.set_status(success=True)
-        logger.success(backup_data.status)
+        logger.success(backup_data.status_short)
         send_notifications(
             backup_data=backup_data,
             notifications=backup.notification_objs,
         )
     except Exception as e:
         backup_data.set_status(success=False, error=str(e))
-        logger.error(backup_data.status)
+        logger.error(backup_data.status_short)
         send_notifications(
             backup_data=backup_data,
             notifications=backup.notification_objs,

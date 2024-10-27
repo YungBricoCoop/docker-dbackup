@@ -52,7 +52,7 @@ backup:
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
     schedule: "*/1 * * * *" # Run every minute
-    notifications: ["email_notification"]
+    notifications: ["email_notification", "discord_notification"]
 
   - name: "staging_sftp_backup"
     host: "primary_sftp"
@@ -76,14 +76,21 @@ backup:
 
 notifications:
   - name: "email_notification"
-    method: "email" # email, discord
+    method: "email"
     notify_on_fail: true
-    notify_on_success: false
-    smtp_server: ""
-    smtp_port: 587
-    smtp_user: ""
-    smtp_password: ""
-    smtp_sender: ""
-    smtp_recipients: [""]
+    notify_on_success: true
+    smtp_server: "mail.infomaniak.com"
+    smtp_port: 465
+    smtp_user: "no-reply@mailemon.ch"
+    smtp_password: "dAu923jKE5nXv9wMW4Fti903"
+    smtp_recipient: "elwan.mayencourt@gmail.com"
+    smtp_sender: "no-reply@mailemon.ch"
+    smtp_recipients: ["elwan.mayencourt@gmail.com"]
     smtp_use_ssl: true
     smtp_use_tls: false
+
+  - name: "discord_notification"
+    method: "discord"
+    notify_on_fail: true
+    notify_on_success: true
+    webhook_url: "https://discord.com/api/webhooks/1300082627742535680/GE9CIh8jsl_ZVvNigpUYyEymttfF73I6q_y7tYbcuxFFM-gEde9NVK8uehKZt_mOLhbE"
