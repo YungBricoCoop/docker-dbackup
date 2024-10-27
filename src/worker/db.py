@@ -11,7 +11,6 @@ def dump_db(
     filepath: str = None,
 ):
     db_connection = backup.db_connection_obj
-    logger.info(f"Dumping database: {db_connection.name} ({db_connection.database})")
     cnf_file_path = None
 
     try:

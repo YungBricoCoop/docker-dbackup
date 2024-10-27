@@ -4,7 +4,7 @@ from config import Backup
 from worker.compression import compress_file
 from worker.db import dump_db
 from worker.file import delete_file, move_file_to_folder, get_backup_file
-from worker.remote import remote_transfer, remote_remove_old_backups
+from worker.backup import upload_backup, remove_old_backups
 from worker.security import encrypt_file
 
 
@@ -29,22 +29,16 @@ def backup_task(backup: Backup):
             )
 
         file_to_send = encrypted_dump_file or compressed_dump_file or dump_file
-        if backup.local:
-            move_file_to_folder(
-                file_to_send,
-                backup.path,
-            )
-            logger.success(f"[{backup.name}] Backup task completed successfully")
-            return
+        protocol = backup.host_obj.protocol if not backup.local else "local"
 
-        remote_transfer(
-            backup.host_obj.protocol,
+        upload_backup(
+            protocol,
             file_to_send,
             backup.path,
             backup.host_obj,
         )
-        remote_remove_old_backups(
-            backup.host_obj.protocol,
+        remove_old_backups(
+            protocol,
             backup.path,
             backup_file_prefix,
             backup.date_format,

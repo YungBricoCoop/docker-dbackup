@@ -1,4 +1,5 @@
 import os
+import shutil
 from abc import ABC, abstractmethod
 from ftplib import FTP, error_perm
 
@@ -6,13 +7,12 @@ import paramiko
 from loguru import logger
 from scp import SCPClient as scp_SCPClient
 
-from config import Host
-from worker.file import get_filename_from_path, get_backups_to_delete
+from worker.file import get_backups_to_delete, get_filename_from_path
 
 DEFAULT_TIMEOUT_IN_SECONDS = 10
 
 
-class FileTransferClient(ABC):
+class BackupClient(ABC):
     @abstractmethod
     def connect(self):
         pass
@@ -22,7 +22,7 @@ class FileTransferClient(ABC):
         pass
 
     @abstractmethod
-    def transfer_file(self, local_path, remote_path):
+    def upload_file(self, local_path, remote_path):
         pass
 
     @abstractmethod
@@ -42,7 +42,7 @@ class FileTransferClient(ABC):
         pass
 
 
-class SCPFileTransferClient(FileTransferClient):
+class SCPBackupClient(BackupClient):
     def __init__(self, host):
         self.host = host
         self.ssh = None
@@ -73,7 +73,7 @@ class SCPFileTransferClient(FileTransferClient):
             self.ssh.close()
             self.ssh = None
 
-    def transfer_file(self, local_path, remote_path):
+    def upload_file(self, local_path, remote_path):
         with scp_SCPClient(self.ssh.get_transport()) as scp:
             scp.put(local_path, remote_path)
 
@@ -95,7 +95,7 @@ class SCPFileTransferClient(FileTransferClient):
 
 
 # SFTP implementation
-class SFTPFileTransferClient(FileTransferClient):
+class SFTPBackupClient(BackupClient):
     def __init__(self, host):
         self.host = host
         self.ssh = None
@@ -132,7 +132,7 @@ class SFTPFileTransferClient(FileTransferClient):
             self.ssh.close()
             self.ssh = None
 
-    def transfer_file(self, local_path, remote_path):
+    def upload_file(self, local_path, remote_path):
         self.sftp.put(local_path, remote_path)
 
     def mkdir(self, path):
@@ -153,7 +153,7 @@ class SFTPFileTransferClient(FileTransferClient):
 
 
 # FTP implementation
-class FTPFileTransferClient(FileTransferClient):
+class FTPBackupClient(BackupClient):
     def __init__(self, host):
         self.host = host
         self.ftp = None
@@ -170,7 +170,7 @@ class FTPFileTransferClient(FileTransferClient):
             self.ftp.quit()
             self.ftp = None
 
-    def transfer_file(self, local_path, remote_path):
+    def upload_file(self, local_path, remote_path):
         remote_dir, remote_filename = os.path.split(remote_path)
         self.mkdir(remote_dir)
         self.chdir(remote_dir)
@@ -198,7 +198,7 @@ class FTPFileTransferClient(FileTransferClient):
         return self.ftp.nlst()
 
 
-class LocalFileTransferClient(FileTransferClient):
+class LocalBackupClient(BackupClient):
     def __init__(self):
         self.current_dir = os.getcwd()
 
@@ -208,10 +208,10 @@ class LocalFileTransferClient(FileTransferClient):
     def disconnect(self):
         pass
 
-    def transfer_file(self, local_path, remote_path):
+    def upload_file(self, local_path, remote_path):
         remote_dir, remote_filename = os.path.split(remote_path)
         self.mkdir(remote_dir)
-        os.rename(local_path, remote_path)
+        shutil.copy2(local_path, remote_path)
 
     def mkdir(self, path):
         os.makedirs(path, exist_ok=True)
@@ -229,18 +229,18 @@ class LocalFileTransferClient(FileTransferClient):
 
 def get_client(type: str, host=None):
     if type == "scp":
-        return SCPFileTransferClient(host)
+        return SCPBackupClient(host)
     elif type == "sftp":
-        return SFTPFileTransferClient(host)
+        return SFTPBackupClient(host)
     elif type == "ftp":
-        return FTPFileTransferClient(host)
+        return FTPBackupClient(host)
     elif type == "local":
-        return LocalFileTransferClient()
+        return LocalBackupClient()
     else:
         raise ValueError(f"Unknown type: {type}")
 
 
-def remote_transfer(
+def upload_backup(
     type: str,
     local_filepath: str,
     remote_dir_path: str,
@@ -252,7 +252,7 @@ def remote_transfer(
         client.mkdir(remote_dir_path)
         remote_filename = get_filename_from_path(local_filepath)
         remote_filepath = os.path.join(remote_dir_path, remote_filename)
-        client.transfer_file(local_filepath, remote_filepath)
+        client.upload_file(local_filepath, remote_filepath)
         logger.info(f"File sent successfully to {remote_filepath}")
     except Exception as e:
         logger.error(f"Failed to send file: {e}")
@@ -261,7 +261,7 @@ def remote_transfer(
         client.disconnect()
 
 
-def remote_remove_old_backups(
+def remove_old_backups(
     type: str,
     remote_dir_path: str,
     filename_prefix: str,

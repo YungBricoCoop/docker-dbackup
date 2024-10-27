@@ -69,6 +69,13 @@ backup:
     skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
+  - name: "staging_local_backup"
+    local: true
+    path: "/var/tmp"
+    db_connection: "staging_db"
+    skip_tables: "logs, cache"
+    schedule: "*/1 * * * *" # Run every minute
+
 notifications:
   - method: "email" # none, email
     notify_on_fail: true
