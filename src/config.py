@@ -51,7 +51,8 @@ class Backup(BaseModel):
     encryption_enabled: Optional[bool] = None
     encryption_password: Optional[str] = None
     compression_enabled: Optional[bool] = None
-    skip_tables: Optional[str] = None
+    skip_tables: Optional[List[str]] = None
+    dump_options: Optional[List[str]] = None
     max_backup_files: Optional[int] = None
     schedule: Optional[str] = None
     host_obj: Optional[Host] = None
@@ -93,7 +94,8 @@ class GlobalConfig(BaseModel):
     encryption_enabled: Optional[bool] = Field(default=False)
     encryption_password: Optional[str] = Field(default="")
     compression_enabled: Optional[bool] = Field(default=True)
-    skip_tables: Optional[str] = Field(default="")
+    skip_tables: Optional[List[str]] = Field(default=[])
+    dump_options: Optional[List[str]] = Field(default=[])
     max_backup_files: Optional[int] = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
 
@@ -170,6 +172,7 @@ class Config(BaseModel):
                 "encryption_password",
                 "compression_enabled",
                 "skip_tables",
+                "dump_options",
                 "max_backup_files",
                 "schedule",
             ]:

@@ -33,11 +33,13 @@ port={db_connection.port}
         ]
 
         if backup.skip_tables:
-            skip_tables_list = backup.skip_tables.split(",")
             command.extend(
                 f"--ignore-table={db_connection.database}.{table}"
-                for table in skip_tables_list
+                for table in backup.skip_tables
             )
+
+        if backup.dump_options:
+            command.extend(backup.dump_options)
 
         with open(filepath, "w") as backup_file:
             result = subprocess.run(

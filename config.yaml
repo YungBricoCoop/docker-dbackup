@@ -4,7 +4,8 @@ global_config:
   encryption_password: ""
   compression_enabled: true
 
-  skip_tables: "logs, cache"
+  skip_tables: ["logs", "cache"]
+  dump_options: ["--no-create-info"]
 
   schedule: "0 0 * * *" # Run every day at midnight
 
@@ -50,14 +51,12 @@ backup:
     host: "primary_scp"
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
-    skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
   - name: "staging_sftp_backup"
     host: "primary_sftp"
     path: "/home/wise-fox/files"
     db_connection: "staging_db"
-    skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
   - name: "staging_ftp_backup"
@@ -66,14 +65,12 @@ backup:
     db_connection: "staging_db"
     encryption_enabled: true
     encryption_password: "strongencryptionkey"
-    skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
   - name: "staging_local_backup"
     local: true
     path: "/var/tmp"
     db_connection: "staging_db"
-    skip_tables: "logs, cache"
     schedule: "*/1 * * * *" # Run every minute
 
 notifications:
