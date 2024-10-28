@@ -9,6 +9,18 @@ With dbackup, you can:
 - Store backups locally or on a remote host via SCP, SFTP, or FTP.
 - Receive notifications on backup success or failure through Email or Discord.
 
+## 🚀 Running dbackup
+
+To run dbackup, you need to mount the configuration file and the storage directory to the container. Below is an example command to run the dbackup container:
+
+```bash
+docker run -d \
+  -v /path/to/config.yaml:/dbackup/config/config.yaml \
+  -v /path/to/storage:/dbackup/storage \
+  --name dbackup \
+  yungbricocoop/dbackup:latest
+```
+
 ## 🛠️ Configuration
 
 The configuration for dbackup is managed through a `YAML` file. Below is the structure of the configuration options, with examples for different use cases Each setting in **global_config** can be overridden by the settings in **backups**.
@@ -115,18 +127,6 @@ backups:
     path: "/dbackup/storage/"
     notification_ids: ["email-fail-notify", "discord-notify"]
     schedule: "0 0 * * SUN" # Weekly backup at midnight on Sundays
-```
-
-## 🚀 Running dbackup
-
-To run dbackup, you need to mount the configuration file and the storage directory to the container. Below is an example command to run the dbackup container:
-
-```bash
-docker run -d \
-  -v /path/to/config.yaml:/dbackup/config.yaml \
-  -v /path/to/storage:/dbackup/storage \
-  --name dbackup \
-  yungbricocoop/dbackup:latest
 ```
 
 ## 📜 Logs
