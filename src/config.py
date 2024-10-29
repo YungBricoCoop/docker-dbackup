@@ -171,7 +171,7 @@ class Log(BaseModel):
 class Config(BaseModel):
     global_config: GlobalConfig
     db_connections: List[DBConnection]
-    hosts: List[Host]
+    hosts: Optional[List[Host]] = Field(default_factory=list)
     backups: List[Backup]
     notifications: Optional[List[Notification]] = Field(default_factory=list)
     log: Optional[Log] = Field(default_factory=Log)
