@@ -17,9 +17,12 @@ To run dbackup, you need to mount the configuration file and the storage directo
 docker run -d \
   -v /path/to/config.yaml:/dbackup/config/config.yaml \
   -v /path/to/storage:/dbackup/storage \
+  -e TZ=Europe/Zurich \
   --name dbackup \
   yungbricocoop/dbackup:latest
 ```
+
+Replace the timezone `Europe/Zurich` with your timezone. You can find a list of valid timezones [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
 
 ## 🛠️ Configuration
 
