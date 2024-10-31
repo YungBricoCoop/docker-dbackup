@@ -90,7 +90,7 @@ backups:
 
 </br>
 
-**Local Backup with Notification on Failure** : In this configuration, the backup will store locally and send a failure notification via email, and success/failure notifications via Discord.
+**Local Backup with Notification on Failure** : In this configuration, the backup will store locally and send notifications via Email and Discord on failure.
 
 ```yaml
 global_config:
@@ -107,8 +107,7 @@ db_connections:
 notifications:
   - id: "email-fail-notify"
     method: "email"
-    notify_on_success: false
-    notify_on_fail: true
+
     smtp_server: "smtp.example.com"
     smtp_port: 587
     smtp_user: "user@example.com"
@@ -119,8 +118,6 @@ notifications:
     smtp_use_ssl: false
   - id: "discord-notify"
     method: "discord"
-    notify_on_success: true
-    notify_on_fail: true
     webhook_url: "https://discord.com/api/webhooks/1234567890/abcdefg"
 
 backups:
@@ -128,6 +125,8 @@ backups:
     db_connection_id: "critical-db"
     local: true
     path: "/dbackup/storage/"
+    notify_on_success: false
+    notify_on_fail: true
     notification_ids: ["email-fail-notify", "discord-notify"]
     schedule: "0 0 * * SUN" # Weekly backup at midnight on Sundays
 ```

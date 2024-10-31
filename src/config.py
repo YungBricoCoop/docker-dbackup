@@ -1,3 +1,4 @@
+import os
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator, ValidationError
 from typing import List, Optional
@@ -63,8 +64,6 @@ class Host(BaseModel):
 class Notification(BaseModel):
     id: str
     method: NotificationMethod
-    notify_on_fail: bool = Field(default=True)
-    notify_on_success: bool = Field(default=False)
     webhook_url: Optional[str] = None
     smtp_server: Optional[str] = None
     smtp_port: Optional[int] = Field(default=587)
@@ -118,6 +117,8 @@ class Backup(BaseModel):
     skip_tables: Optional[List[str]] = None
     dump_options: Optional[List[str]] = None
     max_backup_files: Optional[int] = None
+    notify_on_fail: bool = Field(default=True)
+    notify_on_success: bool = Field(default=False)
     schedule: Optional[str] = None
 
     @field_validator("host_id")
@@ -149,6 +150,8 @@ class GlobalConfig(BaseModel):
     dump_options: Optional[List[str]] = Field(default_factory=list)
     max_backup_files: Optional[int] = Field(default=100)
     schedule: Optional[str] = Field(default="0 0 * * *")
+    notify_on_fail: bool = Field(default=True)
+    notify_on_success: bool = Field(default=False)
     notification_ids: Optional[List[str]] = Field(default_factory=list)
 
     @field_validator("schedule")
@@ -225,6 +228,8 @@ class Config(BaseModel):
                 "dump_options",
                 "max_backup_files",
                 "schedule",
+                "notify_on_fail",
+                "notify_on_success",
                 "notification_ids",
             ]:
                 if getattr(backup, field_name) is None:
@@ -248,6 +253,28 @@ class Config(BaseModel):
             ]
 
         return model
+
+
+def _load_config_from_env() -> Optional[Config]:
+    backup = None
+    if os.getenv("BACKUP_ID"):
+        backup = Backup(
+            id=os.getenv("BACKUP_ID"),
+            db_connection_id=os.getenv("DB_CONNECTION_ID"),
+            host_id=os.getenv("HOST_ID"),
+            path=os.getenv("PATH"),
+            filename=os.getenv("FILENAME"),
+            date_format=os.getenv("DATE_FORMAT"),
+            encryption_enabled=os.getenv("ENCRYPTION_ENABLED") == "true",
+            encryption_password=os.getenv("ENCRYPTION_PASSWORD"),
+            compression_enabled=os.getenv("COMPRESSION_ENABLED") == "true",
+            skip_tables=os.getenv("SKIP_TABLES").split(","),
+            dump_options=os.getenv("DUMP_OPTIONS").split(","),
+            max_backup_files=int(os.getenv("MAX_BACKUP_FILES")),
+            schedule=os.getenv("SCHEDULE"),
+            notification_ids=os.getenv("NOTIFICATION_IDS").split(","),
+        )
+    config = Config(backups=[])
 
 
 def get_config(config_file) -> Optional[Config]:

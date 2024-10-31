@@ -40,6 +40,8 @@ backups:
     encryption_enabled: true
     encryption_password: "passwordthatishardtoguess"
     schedule: "*/1 * * * *" # Run every minute
+    notify_on_fail: true
+    notify_on_success: true
     notification_ids: ["email_notification", "discord_notification"]
 
   - id: "staging_scp_backup"
@@ -47,6 +49,8 @@ backups:
     host_id: "primary_scp"
     path: "/home/wise-fox/files"
     schedule: "*/5 * * * *" # Run every 5 minutes
+    notify_on_fail: true
+    notify_on_success: false
     notification_ids: ["email_notification", "discord_notification"]
 
   - id: "production_local_backup"
@@ -59,13 +63,9 @@ notifications:
   - id: "discord_notification"
     method: "discord"
     webhook_url: ""
-    notify_on_fail: true
-    notify_on_success: true
 
   - id: "email_notification"
     method: "email"
-    notify_on_fail: true
-    notify_on_success: true
     smtp_server: ""
     smtp_port: 465
     smtp_user: ""
