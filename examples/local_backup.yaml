@@ -1,0 +1,17 @@
+global_config:
+  compression_enabled: false
+  encryption_enabled: false
+
+db_connections:
+  - id: "local-db"
+    hostname: "127.0.0.1"
+    username: "root"
+    password: "example_password"
+    database: "mydatabase"
+
+backups:
+  - id: "basic-local-backup"
+    db_connection_id: "local-db"
+    local: true
+    path: "/dbackup/storage/"
+    schedule: "0 0 * * *"

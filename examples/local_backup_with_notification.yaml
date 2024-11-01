@@ -1,0 +1,36 @@
+global_config:
+  compression_enabled: true
+  encryption_enabled: false
+
+db_connections:
+  - id: "critical-db"
+    hostname: "10.0.0.5"
+    username: "admin"
+    password: "password123"
+    database: "critical_db"
+
+notifications:
+  - id: "email-notify"
+    method: "email"
+
+    smtp_server: "smtp.example.com"
+    smtp_port: 587
+    smtp_user: "user@example.com"
+    smtp_password: "smtp_password"
+    smtp_sender: "user@example.com"
+    smtp_recipients: ["admin@example.com"]
+    smtp_use_tls: true
+    smtp_use_ssl: false
+  - id: "discord-notify"
+    method: "discord"
+    discord_webhook_url: "https://discord.com/api/webhooks/1234567890/abcdefg"
+
+backups:
+  - id: "local-critical-backup"
+    db_connection_id: "critical-db"
+    local: true
+    path: "/dbackup/storage/"
+    notify_on_success: false
+    notify_on_fail: true
+    notification_ids: ["email-notify", "discord-notify"]
+    schedule: "0 0 * * SUN"

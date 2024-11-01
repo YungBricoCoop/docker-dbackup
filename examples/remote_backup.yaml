@@ -1,0 +1,26 @@
+global_config:
+  encryption_enabled: true
+  encryption_password: "super_secret"
+  compression_enabled: true
+
+db_connections:
+  - id: "remote-db"
+    hostname: "192.168.1.10"
+    username: "user"
+    password: "db_password"
+    database: "important_db"
+
+hosts:
+  - id: "backup-server"
+    hostname: "backup.example.com"
+    username: "backup_user"
+    ssh_key: "/path/to/ssh_key"
+    port: 22
+    protocol: "scp"
+
+backups:
+  - id: "encrypted-remote-backup"
+    db_connection_id: "remote-db"
+    host_id: "backup-server"
+    path: "/remote-path/"
+    schedule: "30 2 * * *"
