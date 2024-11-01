@@ -10,27 +10,12 @@ global_config:
   schedule: "0 0 * * *" # Run every day at midnight
 
 db_connections:
-  - id: "staging_db"
-    hostname: "staging-db"
-    port: 3306
-    username: "staging_user"
-    password: "stagingpassword"
-    database: "staging_db"
-
   - id: "production_db"
     hostname: "production-db"
     port: 3306
     username: "prod_user"
     password: "prodpassword"
     database: "production_db"
-
-hosts:
-  - id: "primary_scp"
-    hostname: "ssh-sftp-ftp-server"
-    username: "wise-fox"
-    password: "9Jp*2Lv@4zQ"
-    protocol: "scp"
-    port: 22
 
 backups:
   - id: "production_scp_backup"
@@ -62,7 +47,7 @@ backups:
 notifications:
   - id: "discord_notification"
     method: "discord"
-    webhook_url: ""
+    discord_webhook_url: ""
 
   - id: "email_notification"
     method: "email"

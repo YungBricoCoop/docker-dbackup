@@ -28,8 +28,8 @@ class NotificationClient(ABC):
 
 # Discord Notification Client
 class DiscordNotificationClient(NotificationClient):
-    def __init__(self, webhook_url):
-        self.webhook_url = webhook_url
+    def __init__(self, discord_webhook_url):
+        self.discord_webhook_url = discord_webhook_url
 
     def connect(self):
         pass
@@ -85,7 +85,7 @@ class DiscordNotificationClient(NotificationClient):
         }
 
         try:
-            response = requests.post(self.webhook_url, json=embed_data)
+            response = requests.post(self.discord_webhook_url, json=embed_data)
             response.raise_for_status()
             logger.debug("Notification sent successfully!")
         except requests.exceptions.RequestException as e:
@@ -200,28 +200,34 @@ class EmailNotificationClient(NotificationClient):
             logger.error(f"Failed to send email: {e}")
 
 
-def send_notifications(backup_data: BackupData, notifications: List[Notification]):
+def send_notifications(
+    backup_data: BackupData,
+    notifications: List[Notification],
+    notify_on_success: bool,
+    notify_on_fail: bool,
+):
+    if (not notify_on_success and backup_data.success) or (
+        not notify_on_fail and not backup_data.success
+    ):
+        return
     for notification in notifications:
-        if (notification.notify_on_success and backup_data.success) or (
-            notification.notify_on_fail and not backup_data.success
-        ):
-            if notification.method == "discord":
-                client = DiscordNotificationClient(notification.webhook_url)
-            elif notification.method == "email":
-                client = EmailNotificationClient(
-                    notification.smtp_server,
-                    notification.smtp_port,
-                    notification.smtp_user,
-                    notification.smtp_password,
-                    notification.smtp_use_tls,
-                    notification.smtp_use_ssl,
-                    notification.smtp_sender,
-                    notification.smtp_recipients,
-                )
-            else:
-                logger.error(f"Unsupported notification method: {notification.method}")
-                continue
+        if notification.method == "discord":
+            client = DiscordNotificationClient(notification.discord_webhook_url)
+        elif notification.method == "email":
+            client = EmailNotificationClient(
+                notification.smtp_server,
+                notification.smtp_port,
+                notification.smtp_user,
+                notification.smtp_password,
+                notification.smtp_use_tls,
+                notification.smtp_use_ssl,
+                notification.smtp_sender,
+                notification.smtp_recipients,
+            )
+        else:
+            logger.error(f"Unsupported notification method: {notification.method}")
+            continue
 
-            client.connect()
-            client.send_message(backup_data)
-            client.disconnect()
+        client.connect()
+        client.send_message(backup_data)
+        client.disconnect()

@@ -8,6 +8,28 @@ services:
       - ../config.yaml:/dbackup/config/config.yaml
     environment:
       TZ: Europe/Zurich
+
+      # DB
+      DB_ID: "staging_db"
+      DB_HOSTNAME: "staging-db"
+      DB_PORT: 3306
+      DB_USERNAME: "staging_user"
+      DB_PASSWORD: "stagingpassword"
+      DB_DATABASE: "staging_db"
+
+      # HOST
+      HOST_ID: "primary_scp"
+      HOST_HOSTNAME: "ssh-sftp-ftp-server"
+      HOST_USERNAME: "wise-fox"
+      HOST_PASSWORD: "9Jp*2Lv@4zQ"
+      HOST_PROTOCOL: "scp"
+      HOST_PORT: 22
+
+      # NOTIFICATION
+      NOTIFICATION_ID: "discord_notification"
+      NOTIFICATION_METHOD: "discord"
+      DISCORD_WEBHOOK_URL: ""
+
     entrypoint: ["sh", "-c", "while :; do sleep 2073600; done"]
 
   staging-db:

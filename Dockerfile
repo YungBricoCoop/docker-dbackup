@@ -5,6 +5,7 @@ RUN apk update && apk add --no-cache \
   mariadb-connector-c \
   openssl \
   openssh-client \
+  bash \
   rm -rf /var/cache/apk/*
 
 WORKDIR /dbackup

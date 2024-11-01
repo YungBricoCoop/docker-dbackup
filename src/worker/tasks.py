@@ -65,6 +65,8 @@ def backup_task(backup: Backup):
         send_notifications(
             backup_data=backup_data,
             notifications=backup.notification_objs,
+            notify_on_fail=backup.notify_on_fail,
+            notify_on_success=backup.notify_on_success,
         )
 
     except Exception as e:
@@ -73,6 +75,8 @@ def backup_task(backup: Backup):
         send_notifications(
             backup_data=backup_data,
             notifications=backup.notification_objs,
+            notify_on_fail=backup.notify_on_fail,
+            notify_on_success=backup.notify_on_success,
         )
     finally:
         if dump_file:

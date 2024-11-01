@@ -118,7 +118,7 @@ notifications:
     smtp_use_ssl: false
   - id: "discord-notify"
     method: "discord"
-    webhook_url: "https://discord.com/api/webhooks/1234567890/abcdefg"
+    discord_webhook_url: "https://discord.com/api/webhooks/1234567890/abcdefg"
 
 backups:
   - id: "local-critical-backup"

@@ -5,6 +5,7 @@ from typing import List, Optional
 from croniter import croniter
 from loguru import logger
 from enum import Enum
+from worker.utils import split_and_trim
 
 
 class NotificationMethod(str, Enum):
@@ -64,7 +65,7 @@ class Host(BaseModel):
 class Notification(BaseModel):
     id: str
     method: NotificationMethod
-    webhook_url: Optional[str] = None
+    discord_webhook_url: Optional[str] = None
     smtp_server: Optional[str] = None
     smtp_port: Optional[int] = Field(default=587)
     smtp_user: Optional[str] = None
@@ -92,9 +93,9 @@ class Notification(BaseModel):
                         f"Field '{field_name}' is required when method is 'email'."
                     )
         elif model.method == NotificationMethod.DISCORD:
-            if not model.webhook_url:
+            if not model.discord_webhook_url:
                 raise ValueError(
-                    "Field 'webhook_url' is required when method is 'discord'."
+                    "Field 'discord_webhook_url' is required when method is 'discord'."
                 )
         return model
 
@@ -256,32 +257,69 @@ class Config(BaseModel):
 
 
 def _load_config_from_env() -> Optional[Config]:
-    backup = None
-    if os.getenv("BACKUP_ID"):
-        backup = Backup(
-            id=os.getenv("BACKUP_ID"),
-            db_connection_id=os.getenv("DB_CONNECTION_ID"),
-            host_id=os.getenv("HOST_ID"),
-            path=os.getenv("PATH"),
-            filename=os.getenv("FILENAME"),
-            date_format=os.getenv("DATE_FORMAT"),
-            encryption_enabled=os.getenv("ENCRYPTION_ENABLED") == "true",
-            encryption_password=os.getenv("ENCRYPTION_PASSWORD"),
-            compression_enabled=os.getenv("COMPRESSION_ENABLED") == "true",
-            skip_tables=os.getenv("SKIP_TABLES").split(","),
-            dump_options=os.getenv("DUMP_OPTIONS").split(","),
-            max_backup_files=int(os.getenv("MAX_BACKUP_FILES")),
-            schedule=os.getenv("SCHEDULE"),
-            notification_ids=os.getenv("NOTIFICATION_IDS").split(","),
+    db_connection = None
+    host = None
+    notification = None
+    if os.getenv("DB_ID"):
+        db_connection = DBConnection(
+            id=os.getenv("DB_ID"),
+            hostname=os.getenv("DB_HOSTNAME"),
+            port=os.getenv("DB_PORT"),
+            username=os.getenv("DB_USERNAME"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_DATABASE"),
         )
-    config = Config(backups=[])
+    if os.getenv("HOST_ID"):
+        host = Host(
+            id=os.getenv("HOST_ID"),
+            hostname=os.getenv("HOST_HOSTNAME"),
+            username=os.getenv("HOST_USERNAME"),
+            password=os.getenv("HOST_PASSWORD"),
+            ssh_key=os.getenv("HOST_SSH_KEY"),
+            port=os.getenv("HOST_PORT"),
+            protocol=Protocol(os.getenv("HOST_PROTOCOL")),
+        )
+
+    if os.getenv("NOTIFICATION_ID"):
+        notification = Notification(
+            id=os.getenv("NOTIFICATION_ID"),
+            method=NotificationMethod(os.getenv("NOTIFICATION_METHOD")),
+            discord_webhook_url=os.getenv("DISCORD_WEBHOOK_URL"),
+            smtp_server=os.getenv("SMTP_SERVER"),
+            smtp_port=os.getenv("SMTP_PORT"),
+            smtp_user=os.getenv("SMTP_USER"),
+            smtp_password=os.getenv("SMTP_PASSWORD"),
+            smtp_sender=os.getenv("SMTP_SENDER"),
+            smtp_recipients=split_and_trim(os.getenv("SMTP_RECIPIENTS"), ","),
+            smtp_use_tls=bool(os.getenv("SMTP_USE_TLS")),
+            smtp_use_ssl=bool(os.getenv("SMTP_USE_SSL")),
+        )
+
+    return db_connection, host, notification
+
+
+def _append_to_config_list(config, key, value):
+    if not value:
+        return
+    if key not in config:
+        config[key] = []
+    config[key].append(value)
 
 
 def get_config(config_file) -> Optional[Config]:
     config = None
     try:
-        with open(config_file, "r") as file:
+        with open(config_file, "r", encoding="utf-8") as file:
             config_data = yaml.safe_load(file)
+        db_connection, host, notification = _load_config_from_env()
+
+        if db_connection:
+            _append_to_config_list(config_data, "db_connections", db_connection)
+        if host:
+            _append_to_config_list(config_data, "hosts", host)
+        if notification:
+            _append_to_config_list(config_data, "notifications", notification)
+
         config = Config(**config_data)
     except FileNotFoundError as e:
         logger.error(f"Config file not found: {e}")
