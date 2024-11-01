@@ -1,7 +1,7 @@
 from loguru import logger
 
 from config import Backup
-from worker.backup import remove_old_backups, upload_backup
+from worker.transfer_client.transfer_manager import remove_old_backups, upload_backup
 from worker.compression import compress_file
 from worker.db import dump_db
 from worker.file import delete_file, get_backup_file
