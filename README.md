@@ -32,7 +32,7 @@ The configuration for dbackup is managed through a `YAML` file. Below is the str
 
 ### Example Configurations
 
-**Basic Local Backup** : This configuration includes a basic local backup without compression or encryption.
+[Basic Local Backup](./examples/local_backup.yaml) : This configuration includes a basic local backup without compression or encryption.
 
 ```yaml
 global_config:
@@ -56,7 +56,7 @@ backups:
 
 </br>
 
-**Remote Backup with Compression and Encryption** : This configuration includes encryption and compression for secure storage on a remote server via SCP.
+[Remote backup with compression and encryption](./examples/remote_backup.yaml) : This configuration includes encryption and compression for secure storage on a remote server via SCP.
 
 ```yaml
 global_config:
@@ -90,7 +90,7 @@ backups:
 
 </br>
 
-**Local Backup with Notification on Failure** : In this configuration, the backup will store locally and send notifications via Email and Discord on failure.
+[Local Backup with Notification on Failure](./examples/local_backup_with_notification.yaml) : In this configuration, the backup will store locally and send notifications via Email and Discord on failure.
 
 ```yaml
 global_config:
